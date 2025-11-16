@@ -19,7 +19,7 @@ function renderizar_painel_info() {
                 <div class="info-icone-wrap"><?= $icone ?></div>
             <?php endforeach; ?>
         </div>
-        <h2 class="info-titulo">Gerencie seu coworking com inteligência</h2>
+        <h2 class="info-titulo">Gerencie seu coworking com inteligênciaaaaa</h2>
         <p class="info-subtitulo">Conecte sua equipe, organize tarefas e comunique-se melhor</p>
     </div>
     <?php

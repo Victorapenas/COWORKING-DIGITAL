@@ -46,7 +46,7 @@ function renderizar_logo() {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Coworking Digital</title>
     <link rel="stylesheet" href="../css/login.css">
-    <script src="../js/login.js"></script>
+<script src="../js/login.js"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%236A66FF' d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z'/></svg>">
 </head>
 <body>

@@ -362,7 +362,9 @@ body {
     border-radius: 10px;
     outline: none;
     transition: var(--transicao-rapida);
+    -webkit-appearance: textfield; /* Remove flechas no WebKit/Blink */
     -moz-appearance: textfield; /* Remove flechas do input number no Firefox */
+    appearance: textfield; /* Também define a propriedade padrão 'appearance' para compatibilidade */
 }
 
 .input-codigo::-webkit-inner-spin-button, 

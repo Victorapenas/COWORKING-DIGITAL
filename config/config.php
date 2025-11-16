@@ -3,7 +3,7 @@
 
 // Constantes de Configuração do Projeto
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'coworking_digital');
+define('DB_NAME', 'coworking');
 define('DB_USER', 'root'); // Mude para seu usuário de DB
 define('DB_PASS', '');     // Mude para sua senha de DB
 

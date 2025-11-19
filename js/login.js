@@ -1,6 +1,8 @@
 // /js/login.js
 
 document.addEventListener('DOMContentLoaded', () => {
+    // REMOVIDO: const API_URL = window.API_BASE_URL;
+
     const formLogin = document.getElementById('formLogin');
     if (!formLogin) return;
 
@@ -71,12 +73,14 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            const resposta = await fetch('/api/login.php', {
+            // CORREÇÃO: Usa o caminho relativo direto para a API
+            const resposta = await fetch('../api/login.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
             });
 
+            // Linha 92: A validação do JSON agora deve funcionar se o 404 for resolvido.
             const resultado = await resposta.json();
 
             if (resultado.ok) {

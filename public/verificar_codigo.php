@@ -77,8 +77,7 @@ $codigo_debug = $_GET['code'] ?? null;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verificação - Coworking Digital</title>
-    <link rel="stylesheet" href="/css/login.css">
-</head>
+    <link rel="stylesheet" href="../css/login.css">
 <body>
     <div class="container">
         <div class="painel-auth">
@@ -118,6 +117,6 @@ $codigo_debug = $_GET['code'] ?? null;
         </div>
         <?php renderizar_painel_info(); ?>
     </div>
-    <script src="/js/recuperar.js"></script>
+    <script src="../js/recuperar.js"></script>
 </body>
 </html>

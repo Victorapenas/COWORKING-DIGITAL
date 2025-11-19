@@ -4,6 +4,8 @@
 require_once __DIR__ . '/../includes/seguranca.php';
 proteger_autenticacao(); // Redireciona para painel.php se já estiver logado
 
+// AS FUNÇÕES DE CÁLCULO DA URL BASE FORAM REMOVIDAS DAQUI.
+
 function renderizar_painel_info() {
     // Ícones retirados das imagens fornecidas, simulados por SVGs
     $icones = [
@@ -31,7 +33,7 @@ function renderizar_logo() {
     <div class="logo">
         <div class="logo-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path fill-rule="evenodd" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.8 14.8c-.89-.48-1.57-1.16-2.05-2.05-.7-.7-.78-1.74-.21-2.48l1.63-2.12c.16-.2.4-.33.66-.33h2.64c.26 0 .5.13.66.33l1.63 2.12c.57.74.49 1.78-.21 2.48-.48.89-1.16 1.57-2.05 2.05-.5.28-1.07.42-1.65.42s-1.15-.14-1.65-.42zM12 4c-4.41 0-8 3.59-8 8s3.59 8 8 8 8-3.59 8-8-3.59-8-8-8zm.8 4h-1.6c-.22 0-.4.18-.4.4v1.2c0 .22.18.4.4.4h1.6c.22 0 .4-.18.4-.4V8.4c0-.22-.18-.4-.4-.4zM12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/>
+                <path fill-rule="evenodd" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.8 14.8c-.89-.48-1.57-1.16-2.05-2.05-.7-.7-.78-1.74-.21-2.48l1.63-2.12c.56.74.49 1.78-.21 2.48-.48.89-1.16 1.57-2.05 2.05-.5.28-1.07.42-1.65.42s-1.15-.14-1.65-.42zM12 4c-4.41 0-8 3.59-8 8s3.59 8 8 8 8-3.59 8-8-3.59-8-8-8zm.8 4h-1.6c-.22 0-.4.18-.4.4v1.2c0 .22.18.4.4.4h1.6c.22 0 .4-.18.4-.4V8.4c0-.22-.18-.4-.4-.4zM12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/>
                 </svg>
         </div>
         <h1>COWORKING</h1>
@@ -45,8 +47,9 @@ function renderizar_logo() {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Coworking Digital</title>
+    
     <link rel="stylesheet" href="../css/login.css">
-<script src="../js/login.js"></script>
+    
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%236A66FF' d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z'/></svg>">
 </head>
 <body>
@@ -62,7 +65,7 @@ function renderizar_logo() {
                 <form id="formLogin" class="formulario">
                     <div class="campo-form">
                         <input type="email" id="email" placeholder="Digite seu endereço de e-mail" required>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12c2.21 0-4-1.79-4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                     </div>
 
                     <div class="campo-form">
@@ -99,6 +102,7 @@ function renderizar_logo() {
         </div>
         <?php renderizar_painel_info(); ?>
     </div>
-    <script src="/js/login.js"></script>
+    
+    <script src="../js/login.js"></script>
 </body>
 </html>

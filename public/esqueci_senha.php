@@ -42,6 +42,6 @@ require_once 'login.php';
         </div>
         <?php renderizar_painel_info(); ?>
     </div>
-    <script src="/js/recuperar.js"></script>
+    <script src="../js/recuperar.js"></script></script>
 </body>
 </html>

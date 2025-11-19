@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                const resposta = await fetch('/api/senha/solicitar.php', {
+                const resposta = await fetch('../api/senha/solicitar.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: emailInput.value })
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
         exibirErroGeral(''); // Limpa erros anteriores
         
         try {
-            const resposta = await fetch('/api/senha/solicitar.php', {
+            const resposta = await fetch('../api/senha/solicitar.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: emailRecuperacao })
@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const resposta = await fetch('/api/senha/verificar.php', {
+            const resposta = await fetch('../api/senha/verificar.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: email, codigo: codigo })
@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                const resposta = await fetch('/api/senha/redefinir.php', {
+                const resposta = await fetch('../api/senha/redefinir.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
@@ -361,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             try {
-                const resposta = await fetch('/api/registrar.php', {
+                const resposta = await fetch('../api/registrar.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dados)

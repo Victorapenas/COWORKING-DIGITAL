@@ -1,16 +1,1 @@
-[2025-11-20 19:40:14] Para: funcionario@teste.com | Código: 7040 
-[2025-11-20 19:40:56] Para: funcionario@teste.com | Código: 6753 
-[2025-11-20 20:29:06] Para: zeniniti@gmail.com | Código: 9017 
-[2025-11-20 20:31:39] Para: zeniniti@gmail.com | Código: 9276 
-[20/11/2025 20:35:38] Para: zeniniti@gmail.com | Nome: victor | CÓDIGO: 9692
----------------------------------------------------
-[20/11/2025 20:37:59] Para: zeniniti@gmail.com | Nome: victor | CÓDIGO: 8627
----------------------------------------------------
-[20/11/2025 20:41:30] Para: zeniniti@gmail.com | Código: 6258
-[20/11/2025 20:42:50] Para: zeniniti@gmail.com | Código: 9826
-[FALHA NO ENVIO REAL - REQUER SMTP] [20/11/2025 20:46:48] Para: zeniniti@gmail.com | Código: 1315
-[FALHA NO ENVIO REAL - REQUER SMTP] [20/11/2025 20:52:45] Para: funcionario@teste.com | Código: 4691
-[FALHA NO ENVIO REAL - REQUER SMTP] [20/11/2025 20:53:25] Para: funcionario@teste.com | Código: 4311
-[FALHA NO ENVIO REAL - REQUER SMTP] [20/11/2025 20:54:16] Para: funcionario@teste.com | Código: 0625
-[FALHA NO ENVIO REAL - REQUER SMTP] [20/11/2025 20:58:44] Para: zeniniti@gmail.com | Código: 4857
-[FALHA NO ENVIO REAL - REQUER SMTP] [20/11/2025 21:01:33] Para: zeniniti@gmail.com | Código: 0627
+[FALHA NO ENVIO REAL - REQUER SMTP] [20/11/2025 21:37:50] Para: victor.santana@mbvcompany.com | Código: 0327

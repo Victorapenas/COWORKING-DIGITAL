@@ -2,10 +2,10 @@
 // /public/senha_redefinida.php
 
 require_once __DIR__ . '/../includes/seguranca.php';
-proteger_autenticacao();
+// CORREÇÃO: Chamamos apenas as ferramentas visuais (logo, painel), não o login inteiro
+require_once __DIR__ . '/../includes/ui_auxiliar.php';
 
-// Reutilizando funções do login.php
-require_once 'login.php'; 
+proteger_autenticacao();
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -25,9 +25,10 @@ require_once 'login.php';
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 16.17l-3.59-3.59L4 14l5 5L20 9l-1.41-1.41z"/></svg>
                 </div>
                 
-                <p class="status-mensagem">Sua senha foi redefinida com sucesso</p>
+                <h2 style="text-align: center; color: var(--cor-sucesso); margin-bottom: 10px;">Tudo certo!</h2>
+                <p class="status-mensagem">Sua senha foi redefinida com sucesso.</p>
 
-                <a href="login.php" class="botao-primario">Continuar</a>
+                <a href="login.php" class="botao-primario" style="display: block; text-align: center; text-decoration: none;">Continuar para o Login</a>
 
                 <a href="login.php" class="link-voltar">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 12H5m7-7l-7 7 7 7"/></svg>

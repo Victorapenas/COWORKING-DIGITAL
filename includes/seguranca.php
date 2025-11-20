@@ -2,6 +2,8 @@
 // /includes/seguranca.php
 
 require_once __DIR__ . '/../config/config.php';
+// CORREÇÃO: Importar o arquivo onde a função redirecionar() foi criada
+require_once __DIR__ . '/funcoes.php'; 
 
 // Inicia a sessão se ainda não estiver iniciada
 if (session_status() === PHP_SESSION_NONE) {
@@ -18,10 +20,8 @@ function esta_logado(): bool {
 
 /**
  * Armazena os dados do usuário na sessão.
- * @param array $usuario Dados do usuário (id, nome, email, papel, etc.)
  */
 function iniciar_sessao(array $usuario) {
-    // Armazena apenas dados essenciais e não sensíveis
     $_SESSION[SESSAO_USUARIO_KEY] = [
         'id'    => $usuario['id'],
         'nome'  => $usuario['nome'],
@@ -46,22 +46,22 @@ function encerrar_sessao() {
 }
 
 /**
- * Middleware para proteger páginas que exigem login.
- * Redireciona para o login se não estiver logado.
+ * Middleware: Se NÃO estiver logado, chuta para o login.
  */
 function proteger_pagina() {
     if (!esta_logado()) {
-        encerrar_sessao(); // Garante limpeza
-        redirecionar('login.php');
+        encerrar_sessao(); 
+        redirecionar('login.php'); // Agora vai funcionar sem erro fatal
     }
 }
 
 /**
- * Middleware para páginas de autenticação.
- * Redireciona para o painel se JÁ estiver logado.
+ * Middleware: Se JÁ estiver logado, chuta para o painel.
+ * (Usado na tela de login para não deixar logar duas vezes)
  */
 function proteger_autenticacao() {
     if (esta_logado()) {
-        redirecionar('painel.php');
+        redirecionar('painel.php'); // Agora vai funcionar sem erro fatal
     }
 }
+?>

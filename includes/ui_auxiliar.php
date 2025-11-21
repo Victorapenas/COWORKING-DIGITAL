@@ -25,7 +25,7 @@ function renderizar_logo() {
     ?>
     <div class="logo">
         <div class="logo-icon">
-            <img src = "../css/logo_coworking.svg"/>
+            <img src = "../css/coworking_digital.svg"/>
         </div>
     </div>
     <?php

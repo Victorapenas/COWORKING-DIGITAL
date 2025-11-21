@@ -129,11 +129,11 @@ body {
 /* Logo */
 .logo {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 5px;
 }
 
 .logo img {
-    width: 60px; /* Ajuste o tamanho do seu logo se for uma imagem real */
+    width: 150px; /* Ajuste o tamanho do seu logo se for uma imagem real */
     height: auto;
 }
 
@@ -146,8 +146,8 @@ body {
 }
 
 .logo-icon svg {
-    width: 60px;
-    height: 60px;
+    width: 80px;
+    height: 80px;
     fill: var(--cor-primaria);
 }
 

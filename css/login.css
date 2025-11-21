@@ -5,7 +5,7 @@
     --cor-primaria: #6A66FF; /* Roxo */
     --cor-secundaria: #34495e; /* Texto primário */
     --cor-fundo-auth: #F4F5F7;
-    --cor-fundo-info: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); /* Azul degradê */
+    --cor-fundo-info: linear-gradient(135deg, #0041FF 0%, #011970 100%); /* Azul degradê */
     --cor-sucesso: #2ecc71;
     --cor-erro: #e74c3c;
     --cor-borda: #ccc;
@@ -51,6 +51,8 @@ body {
 .painel-info {
     flex: 1 1 50%;
     background: var(--cor-fundo-info);
+    background-size: 400% 400%;
+    animation: move-background 20s ease infinite;
     color: white;
     display: flex;
     flex-direction: column;
@@ -77,6 +79,18 @@ body {
     .painel-auth, .painel-info {
         flex: 0 0 50%;
         max-width: 50%;
+    }
+}
+
+@keyframes move-background {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
     }
 }
 

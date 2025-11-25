@@ -18,6 +18,7 @@ $dados = get_json_input();
 $nome = trim($dados['nome'] ?? '');
 $email = validar_email($dados['email'] ?? '');
 $papel_escolhido = strtoupper($dados['papel'] ?? 'FUNCIONARIO'); // FUNCIONARIO ou GESTOR
+$funcao = trim($dados['funcao'] ?? '');
 
 if (empty($nome) || !$email) {
     responder_erro("Nome e E-mail são obrigatórios.");
@@ -43,8 +44,8 @@ try {
     $papel_id = ($papel_escolhido === 'GESTOR') ? 2 : 3;
 
     // 6. Insere usuário com FLAG de PRIMEIRO ACESSO (precisa_redefinir_senha = 1)
-    $stmt = $pdo->prepare("INSERT INTO usuario (empresa_id, papel_id, nome, email, senha_hash, ativo, precisa_redefinir_senha) VALUES (?, ?, ?, ?, ?, 1, 1)");
-    $stmt->execute([$info['empresa_id'], $papel_id, $nome, $email, $senha_hash]);
+    $stmt = $pdo->prepare("INSERT INTO usuario (empresa_id, papel_id, nome, email, cargo_detalhe, senha_hash, ativo, precisa_redefinir_senha) VALUES (?, ?, ?, ?, ?, ?, 1, 1)");
+    $stmt->execute([$info['empresa_id'], $papel_id, $nome, $email, $funcao, $senha_hash]);
 
     echo json_encode([
         'ok' => true,

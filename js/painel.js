@@ -40,7 +40,8 @@ const formAdd = document.getElementById('formAddMember');
             const dados = {
                 nome: document.getElementById('novo_nome').value,
                 email: document.getElementById('novo_email').value,
-                papel: papelSistema // Usando o papel mapeado
+                papel: papelSistema, // Usando o papel mapeado
+                funcao: document.getElementById('nova_funcao').value
             };
 
             try {

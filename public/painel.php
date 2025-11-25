@@ -2,126 +2,223 @@
 // /public/painel.php
 require_once __DIR__ . '/../includes/seguranca.php';
 require_once __DIR__ . '/../includes/ui_auxiliar.php';
+require_once __DIR__ . '/../includes/funcoes.php'; // Adicionado para garantir acesso ao banco de dados
 proteger_pagina();
 
 $usuario = $_SESSION[SESSAO_USUARIO_KEY];
 $papel = $usuario['papel']; // DONO, GESTOR, FUNCIONARIO
 $pode_cadastrar = ($papel === 'DONO' || $papel === 'GESTOR');
+
+$membrosLideranca = getMembrosLideranca();
+$membrosFuncionariosAgrupados = getMembrosFuncionarios(); // Nome da variável mais claro
+
+// Contagem total dos membros (incluindo Liderança) para o Dashboard Card
+$totalMembrosLideranca = count($membrosLideranca);
+$totalMembrosFuncionario = 0;
+foreach ($membrosFuncionariosAgrupados as $funcao => $membros) {
+    $totalMembrosFuncionario += count($membros);
+}
+$totalGeralMembros = $totalMembrosLideranca + $totalMembrosFuncionario;
+
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <title>Painel - Coworking Digital</title>
-    <link rel="stylesheet" href="../css/login.css">
-    <style>
-        body { display: block; background: #f0f2f5; padding: 20px; }
-        .container-painel { max-width: 900px; margin: 0 auto; }
-        .header-painel { display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .badge { padding: 5px 10px; border-radius: 15px; font-weight: bold; color: white; font-size: 0.8rem; }
-        .badge-dono { background: #6A66FF; } .badge-func { background: #28C76F; }
-        .card-dashboard { background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        
-        /* Estilo do Formulário Interno */
-        .form-cadastro { display: grid; grid-template-columns: 1fr 1fr 150px auto; gap: 10px; align-items: end; }
-        .form-cadastro input, .form-cadastro select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; }
-        .box-senha { background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin-top: 15px; display: none; border: 1px solid #c3e6cb; }
-    </style>
+    <link rel="stylesheet" href="../css/painel.css">
 </head>
 <body>
-    <div class="container-painel">
-        <div class="header-painel">
+    <div class="sidebar">
+        <div class="logo-box">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#0d6efd"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm-1 15h2v-6h-2v6zm0-8h2V7h-2v2z"/></svg>
+            <h3 style="color: #0d6efd; margin: 0;">Coworking</h3>
+        </div>
+
+        <div class="profile-box">
+            <div class="avatar">AD</div>
             <div>
-                <h2>Olá, <?= htmlspecialchars($usuario['nome']) ?>!</h2>
-                <p style="color:#666;">Empresa: Coworking Digital</p>
+                <strong style="display: block;"><?= htmlspecialchars($usuario['nome']) ?></strong>
+                <small><?= htmlspecialchars($papel) ?></small>
             </div>
-            <div style="text-align:right;">
-                <span class="badge badge-<?= ($papel=='DONO')?'dono':'func' ?>"><?= $papel ?></span>
-                <br><br>
-                <button id="btnLogout" class="botao-primario" style="padding: 8px 15px; font-size: 0.9rem; background: #e74c3c;">Sair</button>
+        </div>
+        <?php renderizar_sidebar(); ?>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar">
+            <div class="search-box">
+                <input type="text" placeholder="Buscar..." />
+            </div>
+            <div class="profile">
+                <span class="icon-badge">1</span>
+                <div class="avatar"><?= strtoupper(substr($usuario['nome'], 0, 2)) ?></div>
+            </div>
+        </div>
+        <div style="font-size: 1.5rem; font-weight: bold; color: #333;">Gerenciamento de Equipes</div>
+        <p style="color: var(--cor-secundaria); margin-bottom: 20px;">Gerencie membros, funções e níveis de acesso das equipes</p>
+
+        <div class="dashboard-cards">
+            <div class="card-info">
+                <div class="icon"><?= $totalGeralMembros ?></div>
+                <p>Total de Membros</p>
+            </div>
+            <div class="card-info">
+                <div class="icon">16</div>
+                <p>Tarefas Ativas</p>
+            </div>
+            <div class="card-info">
+                <div class="icon">233</div>
+                <p>Tarefas Concluídas</p>
             </div>
         </div>
 
-        <?php if ($pode_cadastrar): ?>
-        <div class="card-dashboard">
-            <h3 style="color: var(--cor-primaria); margin-bottom: 15px;">Cadastrar Membro da Equipe</h3>
-            <form id="formAdd" class="form-cadastro">
-                <div>
-                    <label>Nome</label>
-                    <input type="text" id="novo_nome" placeholder="Ex: João" required>
-                </div>
-                <div>
-                    <label>E-mail</label>
-                    <input type="email" id="novo_email" placeholder="joao@empresa.com" required>
-                </div>
-                <div>
-                    <label>Papel</label>
-                    <select id="novo_papel">
-                        <option value="FUNCIONARIO">Funcionário</option>
-                        <option value="GESTOR">Gestor</option>
-                    </select>
-                </div>
-                <button type="submit" class="botao-primario">Adicionar</button>
-            </form>
-            <div id="msgSucesso" class="box-senha"></div>
-        </div>
-        <?php endif; ?>
+        <div class="team-management-section">
 
-        <div class="card-dashboard">
-            <h3>📋 Minhas Tarefas</h3>
-            <p>Aqui vai a lista de tarefas do usuário...</p>
-            <div style="padding: 40px; text-align: center; background: #f9f9f9; border-radius: 8px; margin-top: 10px; color: #aaa;">
-                (Placeholder das Tarefas)
+            <div class="team-card">
+                <div class="team-header">
+                    <div>
+                        <h3 style="color: #6A66FF;">Liderança Executiva</h3>
+                        <p style="font-size: 0.9rem; color: #666;">Nível máximo de acesso ao sistema</p>
+                    </div>
+                    <div class="team-stats">
+                        <span><?= count($membrosLideranca) ?> membros</span>
+                        <?php if ($pode_cadastrar): ?>
+                            <button class="botao-equipe" onclick="openModal()" style="margin-left: 15px;">+ Adicionar Membro</button>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <div class="member-list">
+                    <?php if (empty($membrosLideranca)): ?>
+                        <p style="text-align: center; color: #aaa;">Nenhum membro na Liderança Executiva.</p>
+                    <?php else: ?>
+                        <?php foreach ($membrosLideranca as $membro): ?>
+                            <?php 
+                                $iniciais = strtoupper(substr($membro['nome'], 0, 2));
+                                $papelDisplay = ($membro['papel_nome'] === 'DONO') ? 'CEO' : 'Gestor';
+                                $badgeClass = ($membro['papel_nome'] === 'DONO') ? 'badge-dono' : 'badge-gestor';
+                            ?>
+                            <div class="member-item">
+                                <div class="member-info">
+                                    <div class="avatar-sm" style="background: #6A66FF;"><?= $iniciais ?></div>
+                                    <div class="info-text">
+                                        <h4><?= htmlspecialchars($membro['nome']) ?> <span class="badge <?= $badgeClass ?>"><?= $papelDisplay ?></span></h4>
+                                        <p><span style="font-style: italic;"><?= htmlspecialchars($membro['email']) ?></span></p>
+                                        <p style="font-size: 0.7rem; color: #aaa;">Entrou em: <?= date('Y-m-d', strtotime($membro['criado_em'])) ?></p>
+                                    </div>
+                                </div>
+                                <div class="member-actions">
+                                    <button class="botao-config">Configurar</button>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
             </div>
+
+            <div class="team-card">
+                <div class="team-header">
+                    <div>
+                        <h3 style="color: #28C76F;">Membros</h3>
+                    </div>
+                    <div class="team-stats">
+                        <span><?= $totalMembrosFuncionario ?> membros</span>
+                        <span>11 ativas (Simulado)</span>
+                        <span>100 concluídas (Simulado)</span>
+                        <?php if ($pode_cadastrar): ?>
+                            <button class="botao-equipe" onclick="openModal()" style="margin-left: 15px;">+ Adicionar Membro</button>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <div class="member-list">
+                    <?php if (empty($membrosFuncionariosAgrupados)): ?>
+                        <p style="text-align: center; color: #aaa;">Nenhum membro na equipe de Desenvolvimento.</p>
+                    <?php else: ?>
+                        
+                        <?php foreach ($membrosFuncionariosAgrupados as $cargoDetalhe => $membros): ?>
+                            <h4 style="margin-top: 25px; margin-bottom: 10px; border-bottom: 1px dashed #eee; padding-bottom: 5px; color: #333;">
+                                🧑‍💻 <?= htmlspecialchars($cargoDetalhe) ?> (<?= count($membros) ?>)
+                            </h4>
+                            
+                            <?php foreach ($membros as $membro): ?>
+                                <?php 
+                                    $iniciais = strtoupper(substr($membro['nome'], 0, 2));
+                                    // Pega o papel_display definido na função PHP
+                                    $papelDisplay = $membro['papel_display'] ?? 'Membro'; 
+                                ?>
+                                <div class="member-item">
+                                    <div class="member-info">
+                                        <div class="avatar-sm" style="background: #00cfe8;"><?= $iniciais ?></div>
+                                        <div class="info-text">
+                                            <h4><?= htmlspecialchars($membro['nome']) ?> <span class="badge badge-funcionario"><?= $papelDisplay ?></span></h4>
+                                            <p><span style="font-style: italic;"><?= htmlspecialchars($membro['email']) ?></span></p>
+                                            <p style="font-size: 0.7rem; color: #aaa;">Entrou em: <?= date('Y-m-d', strtotime($membro['criado_em'])) ?></p>
+                                        </div>
+                                    </div>
+                                    <div class="member-actions">
+                                        <button class="botao-config">Configurar</button>
+                                        <button class="botao-mensagem">Mensagem</button>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+ 
+                        <?php endforeach; ?>
+
+                    <?php endif; ?>
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <script>
-        // Logout
-        document.getElementById('btnLogout').addEventListener('click', async () => {
-            await fetch('../api/logout.php', { method: 'POST' }); // Crie esse arquivo se não existir
-            window.location.href = 'login.php';
-        });
+    <div id="addMemberModal" class="modal">
+        <div class="modal-content">
+            <h3>Adicionar Novo Membro</h3>
+            <form id="formAddMember">
+                <div class="form-group">
+                    <label>Nome Completo</label>
+                    <input type="text" id="novo_nome" placeholder="Digite o nome completo..." required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="novo_email" placeholder="email@coworking.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Função</label>
+                    <input type="text" id="nova_funcao" placeholder="Ex: Desenvolvedor, Designer..." required>
+                </div>
+                <div class="form-group">
+                    <label>Equipe</label>
+                    <select id="nova_equipe" required>
+                        <option value="">Selecione uma equipe</option>
+                        <option value="GESTOR">Liderança Executiva (Gestor)</option>
+                        <option value="FUNCIONARIO">Desenvolvimento (Funcionário)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nível de Acesso (Papel do Sistema)</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="nivel_acesso" value="GESTOR" checked>
+                            <span class="label-senior">Gestor/Chefe da Equipe</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="nivel_acesso" value="FUNCIONARIO">
+                            Membro/Funcionário
+                        </label>
+                    </div>
+                </div>
 
-        // Cadastro de Membro
-        const formAdd = document.getElementById('formAdd');
-        if (formAdd) {
-            formAdd.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const btn = formAdd.querySelector('button');
-                const msgBox = document.getElementById('msgSucesso');
-                
-                btn.textContent = "Salvando..."; btn.disabled = true;
-                msgBox.style.display = 'none';
-
-                const dados = {
-                    nome: document.getElementById('novo_nome').value,
-                    email: document.getElementById('novo_email').value,
-                    papel: document.getElementById('novo_papel').value
-                };
-
-                try {
-                    const resp = await fetch('../api/admin_adicionar_membro.php', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(dados)
-                    });
-                    const json = await resp.json();
-
-                    if (json.ok) {
-                        msgBox.innerHTML = `<strong>✅ Sucesso!</strong> Senha padrão gerada: <h2>${json.senha_gerada}</h2><small>Informe ao usuário. Ele deverá trocar no primeiro acesso.</small>`;
-                        msgBox.style.display = 'block';
-                        formAdd.reset();
-                    } else {
-                        alert(json.erro || "Erro ao cadastrar");
-                    }
-                } catch (err) {
-                    alert("Erro de conexão");
-                } finally {
-                    btn.textContent = "Adicionar"; btn.disabled = false;
-                }
-            });
-        }
-    </script>
+                <div class="modal-footer">
+                    <button type="button" class="botao-secundario" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="botao-primario">Adicionar Membro</button>
+                </div>
+            </form>
+            <div id="msgSucesso" class="box-senha" style="display: none;"></div>
+        </div>
+    </div>
+    <script src="../js/painel.js"></script>
 </body>
 </html>

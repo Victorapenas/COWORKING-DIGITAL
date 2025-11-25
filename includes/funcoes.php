@@ -58,3 +58,56 @@ function redirecionar(string $url) {
     header('Location: ' . $url);
     exit;
 }
+
+/**
+ * Busca todos os usuários com papel GESTOR e DONO (Liderança Executiva).
+ * @return array Lista de membros
+ */
+function getMembrosLideranca(): array {
+    $pdo = conectar_db();
+    $sql = "SELECT u.nome, u.email, p.nome as papel_nome, u.criado_em 
+            FROM usuario u
+            JOIN papel p ON u.papel_id = p.id
+            WHERE p.nome IN ('DONO', 'GESTOR') AND u.ativo = 1
+            ORDER BY p.nivel_hierarquia DESC, u.nome ASC";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
+/**
+ * Busca todos os usuários com papel FUNCIONARIO e os agrupa pelo Cargo Detalhado.
+ * Requer que a coluna 'cargo_detalhe' exista na tabela 'usuario'.
+ * @return array Um array associativo: [cargo_detalhe => [membro1, membro2], ...]
+ */
+function getMembrosFuncionarios(): array {
+    $pdo = conectar_db();
+    
+    // Agora usando a nova coluna 'u.cargo_detalhe'
+    $sql = "SELECT u.nome, u.email, u.cargo_detalhe, p.nome as papel_nome, u.criado_em 
+            FROM usuario u
+            JOIN papel p ON u.papel_id = p.id
+            WHERE p.nome = 'FUNCIONARIO' AND u.ativo = 1
+            ORDER BY u.cargo_detalhe ASC, u.nome ASC";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+    $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $membrosAgrupados = [];
+    foreach ($resultados as $membro) {
+        // Usa o valor da coluna 'cargo_detalhe' como chave para agrupar
+        $cargoDetalhe = $membro['cargo_detalhe'] ?? 'Não Definido/Genérico'; 
+        
+        if (!isset($membrosAgrupados[$cargoDetalhe])) {
+            $membrosAgrupados[$cargoDetalhe] = [];
+        }
+        // Adiciona a coluna papel_display ao array do membro para ser usada no HTML
+        $membro['papel_display'] = 'Membro';
+        $membrosAgrupados[$cargoDetalhe][] = $membro;
+    }
+    
+    return $membrosAgrupados;
+}

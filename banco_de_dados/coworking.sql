@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 20/11/2025 às 21:10
+-- Tempo de geração: 25/11/2025 às 06:16
 -- Versão do servidor: 10.4.32-MariaDB
 -- Versão do PHP: 8.2.12
 
@@ -60,7 +60,8 @@ INSERT INTO `empresa` (`id`, `nome`, `criado_em`) VALUES
 (6, 'MBVcompany', '2025-11-20 19:13:50'),
 (7, 'mbvcompany', '2025-11-20 19:26:16'),
 (8, 'mbvcompany', '2025-11-20 19:26:16'),
-(9, 'mbvcompany', '2025-11-20 20:00:47');
+(9, 'mbvcompany', '2025-11-20 20:00:47'),
+(10, 'Dani', '2025-11-20 22:30:20');
 
 -- --------------------------------------------------------
 
@@ -136,6 +137,14 @@ CREATE TABLE `token_recuperacao_senha` (
   `criado_em` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Despejando dados para a tabela `token_recuperacao_senha`
+--
+
+INSERT INTO `token_recuperacao_senha` (`id`, `usuario_id`, `codigo`, `expira_em`, `usado_em`, `criado_em`) VALUES
+(131, 59, '6346', '2025-11-20 23:47:06', '2025-11-20 19:32:37', '2025-11-20 22:32:06'),
+(132, 59, '3439', '2025-11-25 03:58:42', '2025-11-24 23:44:04', '2025-11-25 02:43:42');
+
 -- --------------------------------------------------------
 
 --
@@ -148,12 +157,22 @@ CREATE TABLE `usuario` (
   `papel_id` int(11) NOT NULL,
   `nome` varchar(100) NOT NULL,
   `email` varchar(190) NOT NULL,
+  `cargo_detalhe` varchar(100) DEFAULT NULL,
   `senha_hash` varchar(255) DEFAULT NULL,
   `ativo` tinyint(1) NOT NULL DEFAULT 1,
   `precisa_redefinir_senha` tinyint(1) NOT NULL DEFAULT 0,
   `criado_em` timestamp NOT NULL DEFAULT current_timestamp(),
   `atualizado_em` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Despejando dados para a tabela `usuario`
+--
+
+INSERT INTO `usuario` (`id`, `empresa_id`, `papel_id`, `nome`, `email`, `cargo_detalhe`, `senha_hash`, `ativo`, `precisa_redefinir_senha`, `criado_em`, `atualizado_em`) VALUES
+(58, 10, 1, 'Dani', 'abner_jhon@outlook.com', NULL, '$2y$10$sgVImZ..4O3xt7CrlbBexORWB1XsRi3I2Kfwbzo5DJoKYQlO5PSLW', 1, 0, '2025-11-20 22:30:20', '2025-11-20 22:30:20'),
+(59, 10, 3, 'Jhon Abner', 'jhonabnertrabalho@gmail.com', NULL, '$2y$10$JhTx/ygkERmR5tpfhwKG1u0Wu2XqBWGdJdRQnYKpPOlV1Q6cuS1um', 1, 0, '2025-11-20 22:31:04', '2025-11-25 02:44:04'),
+(60, 10, 3, 'Abner Santos', '202013600025@ifba.edu.br', NULL, '$2y$10$9rcq7cxqoRRJr7IK2qml2e0nQ/MJwYY6BSW3s/jNTsHi/B8nLcFOC', 1, 1, '2025-11-25 04:26:35', '2025-11-25 04:26:35');
 
 --
 -- Índices para tabelas despejadas
@@ -226,7 +245,7 @@ ALTER TABLE `comentario_tarefa`
 -- AUTO_INCREMENT de tabela `empresa`
 --
 ALTER TABLE `empresa`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT de tabela `papel`
@@ -250,13 +269,13 @@ ALTER TABLE `tarefa`
 -- AUTO_INCREMENT de tabela `token_recuperacao_senha`
 --
 ALTER TABLE `token_recuperacao_senha`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=131;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=133;
 
 --
 -- AUTO_INCREMENT de tabela `usuario`
 --
 ALTER TABLE `usuario`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
 
 --
 -- Restrições para tabelas despejadas

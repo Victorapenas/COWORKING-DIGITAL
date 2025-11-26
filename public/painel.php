@@ -35,12 +35,16 @@ $totalGeralMembros = $totalMembrosLideranca + $totalMembrosFuncionario;
 <body>
     <div class="sidebar">
         <div class="logo-box">
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#0d6efd"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm-1 15h2v-6h-2v6zm0-8h2V7h-2v2z"/></svg>
-            <h3 style="color: #0d6efd; margin: 0;">Coworking</h3>
+            <img src = "../css/coworking_digital.svg"/>
         </div>
 
         <div class="profile-box">
-            <div class="avatar">AD</div>
+            <div class="avatar">
+                <?php 
+                    $iniciaisuser = strtoupper(substr($usuario['nome'], 0, 2));
+                ?>
+                <?= $iniciaisuser ?>
+            </div>
             <div>
                 <strong style="display: block;"><?= htmlspecialchars($usuario['nome']) ?></strong>
                 <small><?= htmlspecialchars($papel) ?></small>
@@ -113,7 +117,9 @@ $totalGeralMembros = $totalMembrosLideranca + $totalMembrosFuncionario;
                                     </div>
                                 </div>
                                 <div class="member-actions">
-                                    <button class="botao-config">Configurar</button>
+                                    <?php if ($pode_cadastrar): ?>
+                                        <button class="botao-config">Configurar</button>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -162,7 +168,9 @@ $totalGeralMembros = $totalMembrosLideranca + $totalMembrosFuncionario;
                                         </div>
                                     </div>
                                     <div class="member-actions">
-                                        <button class="botao-config">Configurar</button>
+                                        <?php if ($pode_cadastrar): ?>
+                                            <button class="botao-config">Configurar</button>
+                                        <?php endif; ?>
                                         <button class="botao-mensagem">Mensagem</button>
                                     </div>
                                 </div>

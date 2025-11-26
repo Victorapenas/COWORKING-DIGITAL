@@ -74,7 +74,6 @@ function getEmpresaIdLogado(array $usuario): int {
     // 2. Lógica de contingência: Se o ID não veio da sessão, busca no banco
     if ($empresaId === 0 && isset($usuario['id'])) {
         // Incluir conexao.php APENAS aqui, para acesso ao conectar_db()
-        require_once __DIR__ . '/conexao.php'; 
 
         $pdo = conectar_db();
         

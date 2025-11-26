@@ -2,15 +2,19 @@
 // /public/painel.php
 require_once __DIR__ . '/../includes/seguranca.php';
 require_once __DIR__ . '/../includes/ui_auxiliar.php';
-require_once __DIR__ . '/../includes/funcoes.php'; // Adicionado para garantir acesso ao banco de dados
+require_once __DIR__ . '/../includes/funcoes.php'; // funcoes.php já chama conexao.php internamente, se precisar
 proteger_pagina();
 
 $usuario = $_SESSION[SESSAO_USUARIO_KEY];
 $papel = $usuario['papel']; // DONO, GESTOR, FUNCIONARIO
 $pode_cadastrar = ($papel === 'DONO' || $papel === 'GESTOR');
 
-$membrosLideranca = getMembrosLideranca();
-$membrosFuncionariosAgrupados = getMembrosFuncionarios(); // Nome da variável mais claro
+// 1. OBTENDO O ID DA EMPRESA LOGADA CHAMANDO A FUNÇÃO AUXILIAR
+$empresaIdLogado = getEmpresaIdLogado($usuario);
+
+// 2. CHAMA AS FUNÇÕES PASSANDO O ID DA EMPRESA
+$membrosLideranca = getMembrosLideranca($empresaIdLogado);
+$membrosFuncionariosAgrupados = getMembrosFuncionarios($empresaIdLogado); 
 
 // Contagem total dos membros (incluindo Liderança) para o Dashboard Card
 $totalMembrosLideranca = count($membrosLideranca);
@@ -163,7 +167,7 @@ $totalGeralMembros = $totalMembrosLideranca + $totalMembrosFuncionario;
                                     </div>
                                 </div>
                             <?php endforeach; ?>
- 
+    
                         <?php endforeach; ?>
 
                     <?php endif; ?>

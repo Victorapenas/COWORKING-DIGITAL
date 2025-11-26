@@ -60,54 +60,108 @@ function redirecionar(string $url) {
 }
 
 /**
- * Busca todos os usuários com papel GESTOR e DONO (Liderança Executiva).
+ * Tenta obter o ID da empresa da sessão. Se não conseguir, busca no banco 
+ * usando o ID do usuário logado como contingência.
+ *
+ * NOTA: Esta função inclui 'conexao.php' APENAS se precisar consultar o banco.
+ * * @param array $usuario O array da sessão contendo os dados do usuário.
+ * @return int O ID da empresa logada (ou 0 em caso de falha).
+ */
+function getEmpresaIdLogado(array $usuario): int {
+    // 1. Tenta obter o ID da sessão com fallback para 0 (zero) se a chave não existir.
+    $empresaId = (int) ($usuario['empresa_id'] ?? 0); 
+
+    // 2. Lógica de contingência: Se o ID não veio da sessão, busca no banco
+    if ($empresaId === 0 && isset($usuario['id'])) {
+        // Incluir conexao.php APENAS aqui, para acesso ao conectar_db()
+        require_once __DIR__ . '/conexao.php'; 
+
+        $pdo = conectar_db();
+        
+        $stmt = $pdo->prepare("SELECT empresa_id FROM usuario WHERE id = ?");
+        $stmt->execute([$usuario['id']]);
+        
+        // Converte o resultado para inteiro.
+        $empresaId = (int) $stmt->fetchColumn(); 
+        
+        // Opcional: Atualiza a sessão para uso futuro
+        if ($empresaId > 0) {
+            $_SESSION[SESSAO_USUARIO_KEY]['empresa_id'] = $empresaId;
+        }
+    }
+
+    return $empresaId;
+}
+
+
+/**
+ * Busca todos os usuários com papel GESTOR e DONO (Liderança Executiva)
+ * para uma empresa específica.
+ *
+ * @param int $empresaId O ID da empresa para filtrar os membros.
  * @return array Lista de membros
  */
-function getMembrosLideranca(): array {
+function getMembrosLideranca(int $empresaId): array {
+    // A função conectar_db() deve ser acessível neste escopo (assumindo que conexao.php 
+    // está incluído onde funcoes.php é usado ou a conexão é global/importada).
+    // Se conectar_db() estiver em conexao.php, ele deve ser incluído aqui
+    // se esta função for chamada diretamente.
     $pdo = conectar_db();
+    
+    // ... (restante da sua query)
     $sql = "SELECT u.nome, u.email, p.nome as papel_nome, u.criado_em 
             FROM usuario u
             JOIN papel p ON u.papel_id = p.id
-            WHERE p.nome IN ('DONO', 'GESTOR') AND u.ativo = 1
+            WHERE p.nome IN ('DONO', 'GESTOR') 
+            AND u.ativo = 1
+            AND u.empresa_id = :empresaId
             ORDER BY p.nivel_hierarquia DESC, u.nome ASC";
     
     $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':empresaId', $empresaId, PDO::PARAM_INT);
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 
 /**
- * Busca todos os usuários com papel FUNCIONARIO e os agrupa pelo Cargo Detalhado.
- * Requer que a coluna 'cargo_detalhe' exista na tabela 'usuario'.
+ * Busca todos os usuários com papel FUNCIONARIO de uma empresa específica e
+ * os agrupa pelo Cargo Detalhado.
+ *
+ * @param int $empresaId O ID da empresa para filtrar os membros.
  * @return array Um array associativo: [cargo_detalhe => [membro1, membro2], ...]
  */
-function getMembrosFuncionarios(): array {
+function getMembrosFuncionarios(int $empresaId): array {
+    // Incluir conexão se não for garantida globalmente
     $pdo = conectar_db();
     
-    // Agora usando a nova coluna 'u.cargo_detalhe'
+    // ... (restante da sua query)
     $sql = "SELECT u.nome, u.email, u.cargo_detalhe, p.nome as papel_nome, u.criado_em 
             FROM usuario u
             JOIN papel p ON u.papel_id = p.id
-            WHERE p.nome = 'FUNCIONARIO' AND u.ativo = 1
+            WHERE p.nome = 'FUNCIONARIO' 
+            AND u.ativo = 1
+            AND u.empresa_id = :empresaId
             ORDER BY u.cargo_detalhe ASC, u.nome ASC";
     
+    // ... (restante da lógica de agrupamento)
     $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':empresaId', $empresaId, PDO::PARAM_INT);
     $stmt->execute();
     $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     $membrosAgrupados = [];
     foreach ($resultados as $membro) {
-        // Usa o valor da coluna 'cargo_detalhe' como chave para agrupar
         $cargoDetalhe = $membro['cargo_detalhe'] ?? 'Não Definido/Genérico'; 
         
         if (!isset($membrosAgrupados[$cargoDetalhe])) {
             $membrosAgrupados[$cargoDetalhe] = [];
         }
-        // Adiciona a coluna papel_display ao array do membro para ser usada no HTML
         $membro['papel_display'] = 'Membro';
         $membrosAgrupados[$cargoDetalhe][] = $membro;
     }
     
     return $membrosAgrupados;
 }
+
+?>

@@ -2,25 +2,16 @@
 // /includes/seguranca.php
 
 require_once __DIR__ . '/../config/config.php';
-// CORREÇÃO: Importar o arquivo onde a função redirecionar() foi criada
 require_once __DIR__ . '/funcoes.php'; 
 
-// Inicia a sessão se ainda não estiver iniciada
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-/**
- * Verifica se o usuário está logado.
- * @return bool
- */
 function esta_logado(): bool {
     return isset($_SESSION[SESSAO_USUARIO_KEY]) && is_array($_SESSION[SESSAO_USUARIO_KEY]);
 }
 
-/**
- * Armazena os dados do usuário na sessão.
- */
 function iniciar_sessao(array $usuario) {
     $_SESSION[SESSAO_USUARIO_KEY] = [
         'id'    => $usuario['id'],
@@ -30,9 +21,6 @@ function iniciar_sessao(array $usuario) {
     ];
 }
 
-/**
- * Destrói a sessão do usuário.
- */
 function encerrar_sessao() {
     $_SESSION = [];
     if (ini_get("session.use_cookies")) {
@@ -45,23 +33,19 @@ function encerrar_sessao() {
     session_destroy();
 }
 
-/**
- * Middleware: Se NÃO estiver logado, chuta para o login.
- */
+// Protege páginas internas
 function proteger_pagina() {
     if (!esta_logado()) {
         encerrar_sessao(); 
-        redirecionar('login.php'); // Agora vai funcionar sem erro fatal
+        redirecionar('login.php');
     }
 }
 
-/**
- * Middleware: Se JÁ estiver logado, chuta para o painel.
- * (Usado na tela de login para não deixar logar duas vezes)
- */
+// Protege páginas de login (se já logado, manda para DENTRO)
 function proteger_autenticacao() {
     if (esta_logado()) {
-        redirecionar('painel.php'); // Agora vai funcionar sem erro fatal
+        // AQUI ESTAVA O ERRO: Mudamos de painel.php para equipes.php
+        redirecionar('equipes.php'); 
     }
 }
 ?>

@@ -15,9 +15,6 @@ if (!$email || empty($senha)) {
 try {
     $pdo = conectar_db();
 
-    // CORREÇÃO AQUI:
-    // Fazemos um JOIN para buscar o NOME do papel (p.nome) e apelidamos de 'papel'
-    // Isso garante que a sessão receba 'DONO', 'GESTOR' ou 'FUNCIONARIO' em vez do ID numérico.
     $sql = "SELECT u.id, u.nome, u.email, u.senha_hash, u.ativo, u.precisa_redefinir_senha, 
                    p.nome as papel 
             FROM usuario u
@@ -28,23 +25,18 @@ try {
     $stmt->execute([$email]);
     $usuario = $stmt->fetch();
 
-    // 2. Verifica Senha
     if ($usuario && password_verify($senha, $usuario['senha_hash'])) {
         
         if ($usuario['ativo'] == 0) {
             responder_erro("Conta desativada. Contate o suporte.");
         }
 
-        // === FLUXO: PRIMEIRO ACESSO ===
         if ($usuario['precisa_redefinir_senha'] == 1) {
-            
+            // Lógica de primeiro acesso... (mantida igual)
             $codigo = str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
             $expira = date('Y-m-d H:i:s', time() + (15 * 60)); 
-
-            // Invalida anteriores e cria novo token
             $pdo->prepare("UPDATE token_recuperacao_senha SET usado_em = NOW() WHERE usuario_id = ?")->execute([$usuario['id']]);
             $pdo->prepare("INSERT INTO token_recuperacao_senha (usuario_id, codigo, expira_em) VALUES (?, ?, ?)")->execute([$usuario['id'], $codigo, $expira]);
-
             enviar_email_codigo($usuario['email'], $usuario['nome'], $codigo);
 
             echo json_encode([
@@ -57,8 +49,10 @@ try {
             exit;
         }
 
-        // === FLUXO: LOGIN NORMAL ===
-        // Agora a função iniciar_sessao receberá o 'papel' correto (Ex: DONO)
+        // === CORREÇÃO: ATUALIZAR ATIVIDADE ===
+        // Isso faz o campo "Visto: Agora" funcionar no painel
+        $pdo->prepare("UPDATE usuario SET ultima_atividade = NOW() WHERE id = ?")->execute([$usuario['id']]);
+
         iniciar_sessao($usuario);
         echo json_encode(['ok' => true]);
 

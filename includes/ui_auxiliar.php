@@ -1,5 +1,5 @@
 <?php
-// /includes/ui_auxiliar.php
+// ARQUIVO: includes/ui_auxiliar.php
 
 function renderizar_painel_info() {
     $icones = [
@@ -75,6 +75,36 @@ function renderizar_sidebar(){
             Sair
         </a>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnLogout = document.getElementById('btnLogout');
+            if (btnLogout) {
+                btnLogout.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    
+                    // Feedback visual opcional (cursor loading)
+                    document.body.style.cursor = 'wait';
+
+                    try {
+                        const resp = await fetch('../api/logout.php', { method: 'POST' });
+                        const json = await resp.json();
+                        
+                        if (json.ok) {
+                            window.location.href = 'login.php';
+                        } else {
+                            // Se a API retornar erro, força redirecionamento mesmo assim
+                            window.location.href = 'login.php';
+                        }
+                    } catch (err) {
+                        console.error('Erro ao sair:', err);
+                        // Fallback em caso de erro de rede
+                        window.location.href = 'login.php';
+                    }
+                });
+            }
+        });
+    </script>
     <?php
 }
 ?>

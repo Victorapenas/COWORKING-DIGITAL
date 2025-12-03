@@ -261,7 +261,12 @@ function getMembrosDoProjeto(int $projetoId): array {
 function getProjetos(int $empresaId, bool $apenasAtivos = true): array {
     $pdo = conectar_db();
     $filtro = $apenasAtivos ? "AND p.ativo = 1" : "AND p.ativo = 0";
-    $sql = "SELECT p.*, u.nome as nome_gestor FROM projeto p LEFT JOIN usuario u ON p.gestor_id = u.id WHERE u.empresa_id = ? $filtro ORDER BY p.status ASC, p.criado_em DESC";
+    $sql = "SELECT p.*, u.nome as nome_gestor 
+            FROM projeto p 
+            LEFT JOIN usuario u ON p.gestor_id = u.id 
+            WHERE p.empresa_id = ? $filtro 
+            ORDER BY p.status ASC, p.criado_em DESC";
+            
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$empresaId]);
     $projetos = $stmt->fetchAll(PDO::FETCH_ASSOC);

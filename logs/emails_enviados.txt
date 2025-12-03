@@ -1,3 +1,5 @@
 [FALHA NO ENVIO REAL - REQUER SMTP] [20/11/2025 21:37:50] Para: victor.santana@mbvcompany.com | Código: 0327
 [FALHA NO ENVIO REAL - REQUER SMTP] [21/11/2025 22:34:52] Para: teste@teste.com | Código: 8494
 [FALHA NO ENVIO REAL - REQUER SMTP] [01/12/2025 04:18:01] Para: funcionarioo@teste.com | Código: 2449
+[FALHA NO ENVIO REAL - REQUER SMTP] [03/12/2025 06:44:29] Para: 202511240011@ifba.edu.br | Código: 8630
+[FALHA NO ENVIO REAL - REQUER SMTP] [03/12/2025 06:55:36] Para: 202511240018@ifba.edu.br | Código: 6379

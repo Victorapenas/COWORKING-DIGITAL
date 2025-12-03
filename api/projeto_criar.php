@@ -1,5 +1,5 @@
 <?php
-// ARQUIVO: api/projeto_editar.php
+// ARQUIVO: api/projeto_criar.php
 ob_start(); 
 ini_set('display_errors', 0); 
 header("Content-Type: application/json; charset=UTF-8");
@@ -16,16 +16,19 @@ try {
         throw new Exception("Permissão negada.");
     }
 
-    $id = (int)($_POST['id'] ?? 0);
-    if (!$id) throw new Exception("ID do projeto inválido.");
+    // AÇÃO: CRIAÇÃO. NENHUM ID é necessário neste ponto.
 
     // Coleta dados Básicos
+    $empresaId = getEmpresaIdLogado($sessao); // ID da empresa para vinculação
     $nome = trim($_POST['nome'] ?? '');
     $cliente = trim($_POST['cliente'] ?? '');
     $desc = trim($_POST['descricao'] ?? '');
     $inicio = !empty($_POST['data_inicio']) ? $_POST['data_inicio'] : null;
     $fim = !empty($_POST['data_fim']) ? $_POST['data_fim'] : null;
     $status = $_POST['status'] ?? 'PLANEJADO';
+
+    // Validação Mínima
+    if (empty($nome)) throw new Exception("O nome do projeto é obrigatório.");
     
     // Equipes: Recebe array ou string
     $equipes = [];
@@ -35,20 +38,12 @@ try {
 
     $pdo = conectar_db();
 
-    // 1. Recupera Links/Arquivos Atuais para não perder os antigos
-    $stmt = $pdo->prepare("SELECT links_externos, arquivos_privados FROM projeto WHERE id = ?");
-    $stmt->execute([$id]);
-    $antigo = $stmt->fetch();
-    
-    $linksAtuais = !empty($antigo['links_externos']) ? json_decode($antigo['links_externos'], true) : [];
-    $privadosAtuais = !empty($antigo['arquivos_privados']) ? json_decode($antigo['arquivos_privados'], true) : [];
+    // 1. Inicializa Links e Arquivos (Projeto Novo)
+    // Não precisa buscar dados antigos. Começa com arrays vazios.
+    $novosLinks = [];
+    $novosPrivados = [];
 
-    // Filtra: Removemos APENAS os links de texto antigos, pois eles serão recriados pelo formulário.
-    // Mantemos os arquivos (tipo != 'link') e logos.
-    $novosLinks = array_filter($linksAtuais, fn($l) => isset($l['tipo']) && $l['tipo'] !== 'link'); 
-    $novosPrivados = array_filter($privadosAtuais, fn($l) => isset($l['tipo']) && $l['tipo'] !== 'link');
-
-    // 2. Adiciona Novos Links de Texto
+    // 2. Adiciona Novos Links de Texto (Lógica reusada)
     if (isset($_POST['link_titulo'])) {
         foreach ($_POST['link_titulo'] as $i => $titulo) {
             if (!empty($titulo)) {
@@ -72,7 +67,7 @@ try {
         }
     }
     
-    // 3. Upload de Novos Arquivos
+    // 3. Upload de Novos Arquivos (Lógica reusada)
     $uploadDir = __DIR__ . '/../public/uploads/projetos/';
     if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
     
@@ -105,32 +100,40 @@ try {
         }
     }
 
-    // 4. Update SQL Principal
-    $sql = "UPDATE projeto SET nome=?, cliente_nome=?, descricao=?, data_inicio=?, data_fim=?, status=?, links_externos=?, arquivos_privados=?, atualizado_em=NOW() WHERE id=?";
+    // 4. INSERT SQL Principal (MUDANÇA AQUI)
+    // Insere os dados e as strings JSON dos links/arquivos
+    $sql = "INSERT INTO projeto 
+                (empresa_id, nome, cliente_nome, descricao, data_inicio, data_fim, status, links_externos, arquivos_privados, criado_em, atualizado_em)
+            VALUES 
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+            
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
+        $empresaId, // Adicionado para vincular à empresa
         $nome, 
         $cliente, 
         $desc, 
         $inicio, 
         $fim, 
         $status, 
-        json_encode(array_values($novosLinks)), // array_values para reindexar chaves
-        json_encode(array_values($novosPrivados)), 
-        $id
+        json_encode(array_values($novosLinks)),
+        json_encode(array_values($novosPrivados))
     ]);
 
-    // 5. Atualiza Equipes (Remove antigas e insere novas)
-    $pdo->prepare("DELETE FROM projeto_equipe WHERE projeto_id=?")->execute([$id]);
-    
+    // 5. OBTÉM o ID recém-criado (MUDANÇA AQUI)
+    $novoId = $pdo->lastInsertId();
+    if (!$novoId) throw new Exception("Falha ao obter ID do novo projeto.");
+
+    // 6. Insere Equipes usando o NOVO ID (MUDANÇA AQUI)
+    // Não precisa de DELETE, pois o projeto é novo.
     if (!empty($equipes)) {
         $stmtEq = $pdo->prepare("INSERT INTO projeto_equipe (projeto_id, equipe_id) VALUES (?, ?)");
         foreach ($equipes as $eqId) {
-            if($eqId) $stmtEq->execute([$id, $eqId]);
+            if($eqId) $stmtEq->execute([$novoId, $eqId]); // Usa $novoId
         }
     }
 
-    echo json_encode(['ok' => true, 'mensagem' => 'Projeto atualizado com sucesso!']);
+    echo json_encode(['ok' => true, 'id' => $novoId, 'mensagem' => 'Projeto criado com sucesso!']);
 
 } catch (Exception $e) {
     http_response_code(400);

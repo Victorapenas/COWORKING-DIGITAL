@@ -197,7 +197,11 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                                 <h4 style="margin:0; font-size:1rem; color:#333;"><?= htmlspecialchars($mem['nome']) ?></h4>
                                 <p style="margin:2px 0 5px; font-size:0.8rem; color:#888;"><?= htmlspecialchars($mem['cargo_detalhe'] ?: 'Colaborador') ?></p>
                                 <div style="font-size:0.75rem; font-weight:600; color:#6A66FF;">
-                                    <?= $mem['tarefas_feitas'] ?> Entregas
+                                    <?php if($mem['cargo_detalhe'] == 'CEO'):?>
+                                        <?= ''?>
+                                    <?php else:?>
+                                        <?= $mem['tarefas_feitas'] ?> Entregas
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>

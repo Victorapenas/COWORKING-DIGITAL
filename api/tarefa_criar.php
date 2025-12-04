@@ -22,22 +22,28 @@ try {
     $nome = trim($_POST['nome'] ?? '');
     $descricao = trim($_POST['descricao'] ?? '');
     $responsavelId = (int)($_POST['responsavel_id'] ?? 0);
+    $prioridade = $_POST['prioridade'] ?? 'NORMAL';
     $prazo = !empty($_POST['prazo']) ? $_POST['prazo'] : null;
     $status = $_POST['status'] ?? 'A_FAZER';
     
     if (!$projetoId || empty($nome) || !$responsavelId) {
         throw new Exception("Dados obrigatórios incompletos.");
     }
+    
+    if ($prazo) {
+    // Adiciona a hora final do dia ao prazo
+    $prazo = $prazo . ' 23:59:59'; 
+    }
 
     // Insert SQL (SALVA NO BANCO)
     $sql = "INSERT INTO tarefa 
-                (projeto_id, empresa_id, criador_id, responsavel_id, titulo, descricao, prazo, status, criado_em, atualizado_em)
+                (projeto_id, empresa_id, criador_id, responsavel_id, prioridade, titulo, descricao, prazo, status, criado_em, atualizado_em)
             VALUES 
-                (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
             
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
-        $projetoId, $empresaId, $criadorId, $responsavelId, $nome, $descricao, $prazo, $status
+        $projetoId, $empresaId, $criadorId, $responsavelId, $prioridade, $nome, $descricao, $prazo, $status
     ]);
 
     echo json_encode(['ok' => true, 'mensagem' => 'Tarefa criada com sucesso!']);

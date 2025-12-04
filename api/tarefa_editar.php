@@ -19,15 +19,23 @@ try {
         throw new Exception("ID da tarefa inválido para edição.");
     }
     
-    $nome = trim($_POST['titulo'] ?? '');
+    $nome = trim($_POST['nome'] ?? ''); 
     $descricao = trim($_POST['descricao'] ?? '');
     $responsavelId = (int)($_POST['responsavel_id'] ?? 0);
+    $prioridade = $_POST['prioridade'] ?? 'NORMAL';
     $prazo = !empty($_POST['prazo']) ? $_POST['prazo'] : null;
     $status = $_POST['status'] ?? 'A_FAZER';
 
     if (empty($nome) || !$responsavelId) {
+        // Esta é a linha que estava sendo ativada
         throw new Exception("Nome e Responsável são obrigatórios.");
     }
+    
+    if ($prazo) {
+    // Adiciona a hora final do dia ao prazo
+    $prazo = $prazo . ' 23:59:59'; 
+    }
+
 
     // Validação de Permissão: Permite editar se for Gestor/Lider/Dono OU se for o Responsável pela tarefa.
     $podeEditarProjeto = in_array($sessao['papel'], ['DONO', 'LIDER', 'GESTOR']);
@@ -42,12 +50,12 @@ try {
 
     // Update SQL (ATUALIZA NO BANCO)
     $sql = "UPDATE tarefa SET 
-                responsavel_id=?, titulo=?, descricao=?, prazo=?, status=?, atualizado_em=NOW()
+                responsavel_id=?, prioridade=?, titulo=?, descricao=?, prazo=?, status=?, atualizado_em=NOW()
             WHERE id=?";
             
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
-        $responsavelId, $nome, $descricao, $prazo, $status, $tarefaId
+        $responsavelId,$prioridade, $nome, $descricao, $prazo, $status, $tarefaId
     ]);
 
     echo json_encode(['ok' => true, 'mensagem' => 'Tarefa atualizada com sucesso!']);

@@ -25,9 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(data => {
                     if (data.ok && data.tarefa) {
                         const t = data.tarefa;
-                        document.getElementById('nomeTarefa').value = t.nome;
+                        document.getElementById('nomeTarefa').value = t.titulo;
                         document.getElementById('descricaoTarefa').value = t.descricao;
                         document.getElementById('responsavelTarefa').value = t.responsavel_id;
+                        document.getElementById('prioridade').value = t.prioridade;
                         document.getElementById('prazoTarefa').value = t.prazo;
                         document.getElementById('statusTarefa').value = t.status;
                     } else {

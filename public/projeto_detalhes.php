@@ -111,6 +111,9 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
         .st-badge.em_andamento { background: #fffbe6; color: #ffab00; }
         .st-badge.concluida { background: #d3fbe7; color: #029d5b; }
         .st-badge.cancelada { background: #ffeded; color: #cc0000; }
+        .st-badge.prioridade-normal { background: #f0f4ff; color: #436cf1; border: 1px solid #436cf1; }
+        .st-badge.prioridade-importante { background: #fffbe6; color: #ffab00; border: 1px solid #ffab00; }
+        .st-badge.prioridade-urgente { background: #ffeded; color: #cc0000; border: 1px solid #cc0000; }
         .btn-icone { background: none; border: none; cursor: pointer; color: #3498db; }
         .tarefa-item { 
             display:flex; justify-content:space-between; align-items:center; padding:15px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 8px;
@@ -224,6 +227,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                                             </div>
                                         </div>
                                         <div style="min-width: 150px; text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+                                            <span class="st-badge prioridade-<?= strtolower($tarefa['prioridade']); ?>"><?= htmlspecialchars($tarefa['prioridade']); ?></span>
                                             <span class="st-badge <?= $statusClass; ?>"><?= statusTarefaLabel($tarefa['status']); ?></span>
 
                                             <?php if ($pode_editar || $tarefa['responsavel_id'] == $usuario['id']): ?>
@@ -355,64 +359,10 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
     </div>
 
 
-    <div id="modalTarefa" class="modal">
-        <div class="modal-content" style="width: 500px;">
-            <span class="close-btn" onclick="closeModal('modalTarefa')">&times;</span>
-            <h3 id="modalTarefaTitle" style="margin-top: 0;">Nova Tarefa</h3>
-
-            <form id="formCriarTarefa">
-                <input type="hidden" name="projeto_id" id="tarefaProjetoId" value="<?php echo $id; ?>">
-                <input type="hidden" name="id" id="tarefaId" value="">
-
-                <div class="form-group">
-                    <label for="nomeTarefa">Nome da Tarefa:</label>
-                    <input type="text" id="nomeTarefa" name="nome" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="descricaoTarefa">Descrição:</label>
-                    <textarea id="descricaoTarefa" name="descricao" rows="3"></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label for="responsavelTarefa">Responsável:</label>
-                    <select id="responsavelTarefa" name="responsavel_id" required>
-                        <option value="">Selecione um membro...</option>
-                        <?php foreach ($membrosProjeto as $membro): ?>
-                            <?php if($membro['cargo_detalhe'] != 'CEO' && $membro['cargo_detalhe'] != 'Gestor'):?>
-                                <option value="<?= $membro['id'] ?>"><?= htmlspecialchars($membro['nome']) ?></option>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div style="display:flex; gap: 20px;">
-                    <div style="flex:1;">
-                        <div class="form-group">
-                            <label for="prazoTarefa">Prazo:</label>
-                            <input type="date" id="prazoTarefa" name="prazo">
-                        </div>
-                    </div>
-                    <div style="flex:1;">
-                        <div class="form-group">
-                            <label for="statusTarefa">Status:</label>
-                            <select id="statusTarefa" name="status" required>
-                                <option value="ABERTO">Em Aberto</option>
-                                <option value="EM_ANDAMENTO">Em Andamento</option>
-                                <option value="CONCLUIDA">Concluída</option>
-                                <option value="CANCELADA">Cancelada</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="botao-secundario" onclick="closeModal('modalTarefa')">Cancelar</button>
-                    <button type="submit" class="botao-primario">Salvar Tarefa</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    <?php 
+    // INCLUSÃO DO MODAL DE TAREFAS
+    require_once __DIR__ . '/tarefa.php'; 
+    ?>
     
     <div id="modalProjeto" class="modal">
         <div class="modal-content" style="width: 700px;">
@@ -595,7 +545,8 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
 
             try {
                 // 1. Requisição usando fetch
-                const resp = await fetch('api/tarefa_excluir.php', {
+                // AQUI ESTÁ A CORREÇÃO DO CAMINHO: 'api/tarefa_excluir.php' -> '../api/tarefa_excluir.php'
+                const resp = await fetch('../api/tarefa_excluir.php', { 
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded' 
@@ -618,11 +569,10 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
             } catch (err) {
                 // 3. Tratamento de Erro de Conexão ou Resposta Inválida
                 console.error("Erro na requisição fetch:", err);
-                alert("Erro de conexão ou falha ao receber a resposta do servidor.");
+                // Sugestão: adicione uma mensagem de erro mais útil aqui
+                alert("Erro de conexão ou falha ao receber a resposta do servidor. Verifique o console para mais detalhes.");
             }
         }
     </script>
-</body>
-</html>
 </body>
 </html>

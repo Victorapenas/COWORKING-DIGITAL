@@ -19,7 +19,7 @@ try {
     $pdo = conectar_db();
     
     // Seleciona os dados necessários para preencher o formulário de edição
-    $stmt = $pdo->prepare("SELECT id, projeto_id, responsavel_id, titulo, descricao, prazo, status FROM tarefa WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, projeto_id, responsavel_id, titulo, descricao, prioridade, prazo, status FROM tarefa WHERE id = ?");
     $stmt->execute([$tarefaId]);
     $tarefa = $stmt->fetch(PDO::FETCH_ASSOC);
 

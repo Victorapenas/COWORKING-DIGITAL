@@ -1,8 +1,5 @@
 <?php
 // ARQUIVO: public/projeto_detalhes.php
-// =============================================================================
-// LÓGICA DE CONTROLE E PREPARAÇÃO DE DADOS
-// =============================================================================
 require_once __DIR__ . '/../includes/seguranca.php';
 require_once __DIR__ . '/../includes/ui_auxiliar.php';
 require_once __DIR__ . '/../includes/funcoes.php';
@@ -17,8 +14,6 @@ $id = (int)($_GET['id'] ?? 0);
 // 2. Busca e Validação de Dados do Projeto
 $proj = getProjetoDetalhe($id);
 if (!$proj) {
-    // É mais profissional usar um template de erro ou um redirecionamento,
-    // mas mantive o 'die' como estava no original.
     die("Projeto não encontrado.");
 }
 
@@ -46,7 +41,6 @@ if ($proj['data_fim']) {
 }
 
 // 6. Dados para Modais JS (JSON)
-// O ENT_QUOTES e 'UTF-8' são essenciais para evitar XSS ao injetar o JSON no atributo onclick.
 $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
 ?>
 
@@ -63,18 +57,15 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
         .grid-overview { display: grid; grid-template-columns: 2.5fr 1fr; gap: 30px; width: 100%; }
         .full-layout { width: 100%; }
         
-        /* Cabeçalho Rico */
         .war-room-header { background: white; padding: 25px 30px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .header-title h1 { margin: 0; font-size: 1.8rem; color: #2c3e50; font-weight: 800; }
         .header-meta { display: flex; gap: 20px; color: #666; font-size: 0.9rem; margin-top: 8px; }
         
-        /* Abas */
         .page-tabs { display: flex; gap: 30px; border-bottom: 1px solid #e0e0e0; padding: 0 30px; background: white; }
         .page-tab { padding: 15px 0; cursor: pointer; color: #7f8c8d; font-weight: 600; border-bottom: 3px solid transparent; transition: all 0.2s; font-size: 0.95rem; }
         .page-tab:hover { color: #0d6efd; }
         .page-tab.active { color: #0d6efd; border-bottom-color: #0d6efd; }
         
-        /* Estilos Extras */
         .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
         .kpi-box { background: white; padding: 25px; border-radius: 12px; border: 1px solid #eee; text-align: center; }
         .kpi-box h3 { margin: 0; font-size: 2rem; color: #6A66FF; font-weight: 800; }
@@ -82,7 +73,6 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
         .content-box { background: white; border-radius: 16px; border: 1px solid #eee; padding: 30px; margin-bottom: 30px; }
         .box-title { font-size: 1.1rem; font-weight: 700; color: #333; margin-bottom: 25px; border-bottom: 1px solid #f5f5f5; padding-bottom: 15px; display: flex; align-items: center; justify-content: space-between; }
         
-        /* Cards */
         .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
         .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
         .team-card { background: #f8f9fa; border: 1px solid #eee; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 15px; }
@@ -92,7 +82,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
         .file-card-item:hover { border-color: #0d6efd; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .file-icon-circle { font-size: 1.5rem; margin-bottom: 15px; color: #0d6efd; background: #f0f7ff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;}
         
-        /* Dropdown Customizado (Igual Projetos) */
+        /* Dropdown Customizado */
         .custom-select-wrapper { position: relative; user-select: none; width: 100%; }
         .custom-select { position: relative; display: flex; flex-direction: column; }
         .custom-select__trigger { position: relative; display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #fff; border: 1px solid #e0e5f2; border-radius: 10px; cursor: pointer; }
@@ -102,11 +92,8 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
         .custom-option:hover { background-color: #f4f7fe; color: #0d6efd; }
         .custom-option.selected { background-color: #f0f7ff; color: #0d6efd; font-weight: 600; }
 
-        /* --- NOVOS ESTILOS DE TAREFA --- */
-        .st-badge { 
-            padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; 
-            display: inline-flex; align-items: center; gap: 5px; height: fit-content;
-        }
+        /* Badges de Tarefa */
+        .st-badge { padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: inline-flex; align-items: center; gap: 5px; height: fit-content; }
         .st-badge.a_fazer { background: #f0f4ff; color: #436cf1; }
         .st-badge.em_andamento { background: #fffbe6; color: #ffab00; }
         .st-badge.concluida { background: #d3fbe7; color: #029d5b; }
@@ -115,21 +102,12 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
         .st-badge.prioridade-importante { background: #fffbe6; color: #ffab00; border: 1px solid #ffab00; }
         .st-badge.prioridade-urgente { background: #ffeded; color: #cc0000; border: 1px solid #cc0000; }
         .btn-icone { background: none; border: none; cursor: pointer; color: #3498db; }
-        .tarefa-item { 
-            display:flex; justify-content:space-between; align-items:center; padding:15px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 8px;
-            transition: background 0.2s;
-        }
+        .tarefa-item { display:flex; justify-content:space-between; align-items:center; padding:15px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 8px; transition: background 0.2s; }
         .tarefa-item:hover { background: #fcfcfc; }
-        /* --- FIM NOVOS ESTILOS DE TAREFA --- */
-        /* Estilo do Modal (necessário aqui ou em painel.css) */
-        .modal {
-            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto;
-            background-color: rgba(0,0,0,0.4); justify-content: center; align-items: center;
-        }
-        .modal-content {
-            background-color: #fefefe; margin: auto; padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            position: relative;
-        }
+
+        /* Estilo do Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); justify-content: center; align-items: center; }
+        .modal-content { background-color: #fefefe; margin: auto; padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; }
         .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
         .modal-tabs { display: flex; gap: 15px; border-bottom: 1px solid #eee; margin-bottom: 20px; margin-top: 10px; }
         .modal-tab { padding: 10px 0; cursor: pointer; color: #7f8c8d; font-weight: 600; border-bottom: 3px solid transparent; transition: all 0.2s; font-size: 0.9rem; }
@@ -139,8 +117,10 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; color: #555; }
         .form-group input:not([type="checkbox"]), .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #e0e5f2; border-radius: 10px; box-sizing: border-box; }
-        .arquivos-atuais-container { margin-top: 10px; padding: 10px; background: #f9f9f9; border-radius: 8px; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #eee; padding-top: 15px; margin-top: 20px; }
+        
+        /* Container onde aparecem os arquivos para excluir */
+        .arquivos-atuais-container { margin-top: 10px; padding: 10px; background: #f9f9f9; border-radius: 8px; border: 1px dashed #ddd; }
     </style>
 </head>
 <body>
@@ -358,7 +338,6 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
         <?php endif; ?>
     </div>
 
-
     <?php 
     // INCLUSÃO DO MODAL DE TAREFAS
     require_once __DIR__ . '/tarefa.php'; 
@@ -423,6 +402,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                     <div class="form-group">
                         <label>Adicionar Arquivos Públicos</label>
                         <input type="file" name="docs_publicos[]" multiple class="campo-form" style="padding:10px;">
+                        
                         <div id="arquivosAtuaisPublicos" class="arquivos-atuais-container"></div>
                     </div>
                     <div class="form-group">
@@ -437,6 +417,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                     <div class="form-group">
                         <label>Adicionar Documentos Confidenciais</label>
                         <input type="file" name="docs_privados[]" multiple class="campo-form">
+                        
                         <div id="arquivosAtuaisPrivados" class="arquivos-atuais-container"></div>
                     </div>
                     <div class="form-group">
@@ -462,7 +443,6 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
         // Função JS para fechar modals, acessível globalmente pelos scripts externos
         window.closeModal = function(id) {
             const modal = document.getElementById(id);
-            // CORREÇÃO APLICADA AQUI: Garante o fechamento usando !important
             if (modal) modal.style.setProperty('display', 'none', 'important');
         };
 
@@ -544,8 +524,6 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
             }
 
             try {
-                // 1. Requisição usando fetch
-                // AQUI ESTÁ A CORREÇÃO DO CAMINHO: 'api/tarefa_excluir.php' -> '../api/tarefa_excluir.php'
                 const resp = await fetch('../api/tarefa_excluir.php', { 
                     method: 'POST',
                     headers: {
@@ -562,14 +540,11 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                     alert(json.mensagem);
                     window.location.reload(); // Recarrega a página após o sucesso
                 } else {
-                    // Erro de lógica (ex: permissão negada) tratado pelo PHP
                     alert('Erro ao excluir: ' + (json.erro || "Erro ao processar a exclusão."));
                 }
                 
             } catch (err) {
-                // 3. Tratamento de Erro de Conexão ou Resposta Inválida
                 console.error("Erro na requisição fetch:", err);
-                // Sugestão: adicione uma mensagem de erro mais útil aqui
                 alert("Erro de conexão ou falha ao receber a resposta do servidor. Verifique o console para mais detalhes.");
             }
         }

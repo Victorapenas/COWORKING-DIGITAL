@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalProjeto = document.getElementById('modalProjeto');
     const modalDel = document.getElementById('modalExcluir');
 
-    // --- FUNÇÃO SEGURA (CORRIGIDA) ---
+    // --- FUNÇÃO PARA ABRIR MODAL DE NOVO PROJETO ---
     window.openModal = function() { 
         if (modalProjeto) {
             modalProjeto.style.display = 'flex';
@@ -13,6 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('formCriarProjeto');
             if(form) form.reset();
             
+            // Limpa inputs ocultos de remoção de arquivo (se houver de edições anteriores)
+            document.querySelectorAll('.input-remove-file').forEach(e => e.remove());
+            
             // Título e ID
             const title = document.getElementById('modalTitle');
             if(title) title.innerText = "Novo Projeto";
@@ -20,18 +23,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const pId = document.getElementById('projId');
             if(pId) pId.value = ""; 
             
-            // Limpa prévia de logo (SE EXISTIR)
+            // Limpa prévia de logo
             const logoPrev = document.getElementById('logo_preview');
             if(logoPrev) logoPrev.innerText = "";
 
-            // Limpa links públicos (SE EXISTIR)
+            // Limpa links públicos e container de arquivos
             const linkPub = document.getElementById('containerLinksPublicos');
             if(linkPub) linkPub.innerHTML = "";
+            const arqPub = document.getElementById('arquivosAtuaisPublicos');
+            if(arqPub) arqPub.innerHTML = "";
             
-            // --- CORREÇÃO DO ERRO ---
-            // Só tenta limpar se o elemento existir (Gestores não têm esse elemento)
+            // Limpa links privados e container de arquivos privados
             const linkPriv = document.getElementById('containerLinksPrivados');
             if(linkPriv) linkPriv.innerHTML = "";
+            const arqPriv = document.getElementById('arquivosAtuaisPrivados');
+            if(arqPriv) arqPriv.innerHTML = "";
 
             // Limpa Dropdown de Equipes
             const hiddenInputs = document.getElementById('hiddenEquipesInputs');
@@ -47,21 +53,21 @@ document.addEventListener('DOMContentLoaded', () => {
             // Remove classe 'selected' das opções
             document.querySelectorAll('.custom-option').forEach(op => op.classList.remove('selected'));
 
-            // Reseta abas
+            // Reseta abas para a primeira
             const firstTab = document.querySelector('.modal-tab');
             if(firstTab) switchFormTab('info', firstTab);
         }
     }
 
+    // --- FUNÇÃO PARA ABRIR MODAL DE EDIÇÃO ---
     window.abrirModalEditarProjeto = function(proj) {
         if (modalProjeto) {
             modalProjeto.style.display = 'flex';
             const title = document.getElementById('modalTitle');
             if(title) title.innerText = "Editar Projeto";
             
-            // Preencher Campos (com verificação de existência)
+            // Preencher Campos
             const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
-            
             setVal('projId', proj.id);
             setVal('projNome', proj.nome);
             setVal('projCliente', proj.cliente_nome || '');
@@ -70,13 +76,17 @@ document.addEventListener('DOMContentLoaded', () => {
             setVal('projFim', proj.data_fim || '');
             setVal('projStatus', proj.status);
 
-            // --- LÓGICA DO DROPDOWN NA EDIÇÃO ---
+            // Resetar inputs de remoção de arquivos antigos
+            document.querySelectorAll('.input-remove-file').forEach(e => e.remove());
+
+            // --- PREENCHER EQUIPES (DROPDOWN) ---
             const hiddenInputs = document.getElementById('hiddenEquipesInputs');
             if(hiddenInputs) hiddenInputs.innerHTML = "";
             document.querySelectorAll('.custom-option').forEach(op => op.classList.remove('selected'));
             
             if (proj.equipes && Array.isArray(proj.equipes)) {
                 proj.equipes.forEach(eq => {
+                    // O backend pode retornar objeto {id, nome} ou apenas ID
                     const idBusca = (typeof eq === 'object') ? eq.id : eq;
                     const option = document.querySelector(`.custom-option[data-value="${idBusca}"]`);
                     if(option) option.classList.add('selected');
@@ -84,7 +94,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(typeof atualizarInputsEquipe === 'function') atualizarInputsEquipe(); 
             }
 
-            // Links Públicos
+            // --- RENDERIZAR ARQUIVOS EXISTENTES (PÚBLICOS) ---
+            renderizarArquivosExistentes(proj.links, 'arquivosAtuaisPublicos');
+
+            // --- RENDERIZAR ARQUIVOS EXISTENTES (PRIVADOS) ---
+            renderizarArquivosExistentes(proj.privados, 'arquivosAtuaisPrivados');
+
+            // --- RENDERIZAR LINKS DE TEXTO (PÚBLICOS) ---
             const containerPub = document.getElementById('containerLinksPublicos');
             if(containerPub) {
                 containerPub.innerHTML = "";
@@ -95,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Links Privados (Só limpa se existir para o usuário logado)
+            // --- RENDERIZAR LINKS DE TEXTO (PRIVADOS) ---
             const containerPriv = document.getElementById('containerLinksPrivados');
             if (containerPriv) {
                 containerPriv.innerHTML = "";
@@ -111,7 +127,61 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Restante das funções auxiliares
+    // --- NOVA FUNÇÃO AUXILIAR: LISTAR ARQUIVOS PARA EDIÇÃO/EXCLUSÃO ---
+    window.renderizarArquivosExistentes = function(lista, containerId) {
+        const container = document.getElementById(containerId);
+        if(!container) return;
+        
+        container.innerHTML = ''; // Limpa lista anterior
+        
+        if (lista && Array.isArray(lista)) {
+            let filesFound = false;
+            lista.forEach(item => {
+                // Filtra apenas o que é arquivo físico (ignora links e logos se necessário)
+                if (item.tipo === 'arquivo' || item.tipo === 'logo') {
+                    filesFound = true;
+                    
+                    const div = document.createElement('div');
+                    div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:white; padding:8px; margin-bottom:5px; border:1px solid #eee; border-radius:6px; font-size:0.85rem;';
+                    
+                    div.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+                            <span style="color:#6A66FF;">📄</span>
+                            <a href="${item.url}" target="_blank" style="text-decoration:none; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:250px;">
+                                ${item.titulo}
+                            </a>
+                        </div>
+                        <button type="button" class="btn-remove-file" style="color:#e74c3c; background:none; border:none; cursor:pointer; font-weight:bold; font-size:0.8rem;">Excluir</button>
+                    `;
+
+                    // Lógica do botão excluir
+                    const btn = div.querySelector('.btn-remove-file');
+                    btn.onclick = function() {
+                        // Efeito visual de riscado
+                        div.style.opacity = '0.5';
+                        div.style.textDecoration = 'line-through';
+                        btn.remove(); // Remove o botão para não clicar de novo
+                        
+                        // Cria input hidden para avisar o PHP para remover este arquivo
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'remover_arquivos[]';
+                        input.className = 'input-remove-file';
+                        input.value = item.url; // O caminho do arquivo é a chave para exclusão
+                        document.getElementById('formCriarProjeto').appendChild(input);
+                    };
+
+                    container.appendChild(div);
+                }
+            });
+            
+            if(!filesFound) {
+                container.innerHTML = '<small style="color:#aaa;">Nenhum arquivo anexado.</small>';
+            }
+        }
+    }
+
+    // --- FUNÇÕES AUXILIARES DE UI ---
     window.closeModal = function() { if (modalProjeto) modalProjeto.style.display = 'none'; }
     window.fecharModalExcluir = function() { if (modalDel) modalDel.style.display = 'none'; }
 
@@ -176,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addLinkInput = function(containerId, isPrivado = false, valTitulo = '', valUrl = '') {
         const container = document.getElementById(containerId);
-        if(!container) return; // Segurança extra
+        if(!container) return; 
 
         const nameTit = isPrivado ? 'link_priv_titulo[]' : 'link_titulo[]';
         const nameUrl = isPrivado ? 'link_priv_url[]' : 'link_url[]';
@@ -190,6 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
         container.appendChild(div);
     }
 
+    // --- SUBMISSÃO DO FORMULÁRIO ---
     const formProj = document.getElementById('formCriarProjeto');
     if (formProj) {
         formProj.addEventListener('submit', async (e) => {
@@ -204,12 +275,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 const endpoint = id ? '../api/projeto_editar.php' : '../api/projeto_criar.php';
 
                 const resp = await fetch(endpoint, { method: 'POST', body: formData });
+                
+                // Tenta decodificar o JSON com tratamento de erro
                 let json;
-                try { json = await resp.json(); } catch (parseErr) { throw new Error("Resposta inválida do servidor (JSON)."); }
+                const textResp = await resp.text();
+                try {
+                    json = JSON.parse(textResp);
+                } catch (parseErr) {
+                    console.error("Resposta bruta do servidor:", textResp);
+                    throw new Error("Resposta inválida do servidor. Verifique o console.");
+                }
 
-                if (json.ok) window.location.reload();
-                else alert(json.erro || "Erro ao salvar projeto.");
-            } catch (err) { alert("Erro: " + err.message); } finally {
+                if (json.ok) {
+                    window.location.reload();
+                } else {
+                    alert(json.erro || "Erro desconhecido ao salvar projeto.");
+                }
+            } catch (err) { 
+                alert("Erro: " + err.message); 
+            } finally {
                 btn.disabled = false; btn.textContent = txtOriginal;
             }
         });

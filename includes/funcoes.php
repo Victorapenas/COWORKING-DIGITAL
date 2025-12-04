@@ -327,4 +327,22 @@ function getProjetoDetalhe(int $id): ?array {
     
     return $proj;
 }
+
+function statusTarefaLabel(string $status): string {
+    switch (strtoupper($status)) {
+        case 'ABERTO':
+        case 'PENDENTE':
+            return 'A FAZER';
+        case 'EM_ANDAMENTO':
+            return 'EM ANDAMENTO';
+        case 'CONCLUIDA':
+            return 'CONCLUÍDA';
+        case 'EM_REVISAO':
+            return 'EM REVISÃO';
+        case 'CANCELADA':
+            return 'CANCELADA';
+        default:
+            return 'DESCONHECIDO';
+    }
+}
 ?>

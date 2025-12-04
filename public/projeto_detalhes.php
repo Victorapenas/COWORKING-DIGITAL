@@ -1,40 +1,55 @@
 <?php
 // ARQUIVO: public/projeto_detalhes.php
+// =============================================================================
+// LÓGICA DE CONTROLE E PREPARAÇÃO DE DADOS
+// =============================================================================
 require_once __DIR__ . '/../includes/seguranca.php';
 require_once __DIR__ . '/../includes/ui_auxiliar.php';
 require_once __DIR__ . '/../includes/funcoes.php';
 
 proteger_pagina();
+
+// 1. Variáveis de Sessão e Empresa
 $usuario = $_SESSION[SESSAO_USUARIO_KEY];
 $empresaId = getEmpresaIdLogado($usuario);
 $id = (int)($_GET['id'] ?? 0);
 
-// Busca detalhes do projeto
+// 2. Busca e Validação de Dados do Projeto
 $proj = getProjetoDetalhe($id);
-if(!$proj) die("Projeto não encontrado.");
+if (!$proj) {
+    // É mais profissional usar um template de erro ou um redirecionamento,
+    // mas mantive o 'die' como estava no original.
+    die("Projeto não encontrado.");
+}
 
-// Permissões
+// 3. Permissões
 $papel = $usuario['papel'];
 $is_socio = in_array($papel, ['DONO', 'LIDER']);
 $pode_editar = in_array($papel, ['DONO', 'LIDER', 'GESTOR']);
 
-// Dados para os Modais (Lista de Equipes para o Dropdown)
+// 4. Dados Auxiliares
 $listaEquipes = listarEquipes($empresaId);
 $membrosProjeto = getMembrosDoProjeto($id);
 
-// Cálculo de Prazos
+// 5. Cálculo de Prazos
 $prazoHtml = '<span style="color:#999">Indefinido</span>';
 if ($proj['data_fim']) {
     $hoje = new DateTime();
     $fim = new DateTime($proj['data_fim']);
     $diff = $hoje->diff($fim);
-    if ($diff->invert) $prazoHtml = '<span style="color:#e74c3c; font-weight:bold;">Atrasado ' . $diff->days . ' dias</span>';
-    else $prazoHtml = '<span style="color:#2ecc71; font-weight:bold;">' . $diff->days . ' dias restantes</span>';
+
+    if ($diff->invert) {
+        $prazoHtml = '<span style="color:#e74c3c; font-weight:bold;">Atrasado ' . $diff->days . ' dias</span>';
+    } else {
+        $prazoHtml = '<span style="color:#2ecc71; font-weight:bold;">' . $diff->days . ' dias restantes</span>';
+    }
 }
 
-// Prepara objeto JSON para o JavaScript (Edição)
+// 6. Dados para Modais JS (JSON)
+// O ENT_QUOTES e 'UTF-8' são essenciais para evitar XSS ao injetar o JSON no atributo onclick.
 $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
 ?>
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -42,6 +57,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
     <title><?= htmlspecialchars($proj['nome']) ?></title>
     <link rel="stylesheet" href="../css/painel.css">
     <style>
+        /* Estilos específicos da página mantidos */
         .tab-content { display: none; padding: 30px; max-width: 1400px; margin: 0 auto; }
         .tab-content.active { display: block; }
         .grid-overview { display: grid; grid-template-columns: 2.5fr 1fr; gap: 30px; width: 100%; }
@@ -74,7 +90,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
         
         .file-card-item { background: white; border: 1px solid #eee; border-radius: 12px; padding: 20px; text-align: center; text-decoration: none; color: inherit; display: flex; flex-direction: column; align-items: center; position: relative; }
         .file-card-item:hover { border-color: #0d6efd; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .file-icon-circle { font-size: 1.5rem; margin-bottom: 15px; color: #0d6efd; background: #f0f7ff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .file-icon-circle { font-size: 1.5rem; margin-bottom: 15px; color: #0d6efd; background: #f0f7ff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;}
         
         /* Dropdown Customizado (Igual Projetos) */
         .custom-select-wrapper { position: relative; user-select: none; width: 100%; }
@@ -85,6 +101,43 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
         .custom-option { padding: 10px 15px; cursor: pointer; transition: all 0.2s; }
         .custom-option:hover { background-color: #f4f7fe; color: #0d6efd; }
         .custom-option.selected { background-color: #f0f7ff; color: #0d6efd; font-weight: 600; }
+
+        /* --- NOVOS ESTILOS DE TAREFA --- */
+        .st-badge { 
+            padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; 
+            display: inline-flex; align-items: center; gap: 5px; height: fit-content;
+        }
+        .st-badge.a_fazer { background: #f0f4ff; color: #436cf1; }
+        .st-badge.em_andamento { background: #fffbe6; color: #ffab00; }
+        .st-badge.concluida { background: #d3fbe7; color: #029d5b; }
+        .st-badge.cancelada { background: #ffeded; color: #cc0000; }
+        .btn-icone { background: none; border: none; cursor: pointer; color: #3498db; }
+        .tarefa-item { 
+            display:flex; justify-content:space-between; align-items:center; padding:15px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .tarefa-item:hover { background: #fcfcfc; }
+        /* --- FIM NOVOS ESTILOS DE TAREFA --- */
+        /* Estilo do Modal (necessário aqui ou em painel.css) */
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto;
+            background-color: rgba(0,0,0,0.4); justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe; margin: auto; padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .modal-tabs { display: flex; gap: 15px; border-bottom: 1px solid #eee; margin-bottom: 20px; margin-top: 10px; }
+        .modal-tab { padding: 10px 0; cursor: pointer; color: #7f8c8d; font-weight: 600; border-bottom: 3px solid transparent; transition: all 0.2s; font-size: 0.9rem; }
+        .modal-tab.active { color: #0d6efd; border-bottom-color: #0d6efd; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; color: #555; }
+        .form-group input:not([type="checkbox"]), .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #e0e5f2; border-radius: 10px; box-sizing: border-box; }
+        .arquivos-atuais-container { margin-top: 10px; padding: 10px; background: #f9f9f9; border-radius: 8px; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #eee; padding-top: 15px; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -110,7 +163,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                 </div>
             </div>
             <div style="text-align:right; display:flex; align-items:center; gap:20px;">
-                <?php if($pode_editar): ?>
+                <?php if ($pode_editar): ?>
                     <button onclick='abrirModalEditarProjeto(<?= $projJson ?>)' class="botao-primario" style="padding: 10px 20px; display:flex; align-items:center; gap:8px;">
                         <?= getIcone('editar') ?> Editar Projeto
                     </button>
@@ -129,7 +182,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
             <div class="page-tab active" onclick="switchPageTab('visao_geral', this)">Visão Geral</div>
             <div class="page-tab" onclick="switchPageTab('equipe', this)">Equipe & Progresso</div>
             <div class="page-tab" onclick="switchPageTab('arquivos', this)">Arquivos & Links</div>
-            <?php if($is_socio): ?>
+            <?php if ($is_socio): ?>
             <div class="page-tab" onclick="switchPageTab('restrito', this)" style="color:#e74c3c;">Área Restrita</div>
             <?php endif; ?>
         </div>
@@ -147,18 +200,50 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                     <div class="content-box">
                         <div class="box-title">
                             <span><?= getIcone('task') ?> Cronograma de Atividades</span>
+                            <?php if ($pode_editar): ?>
+                                <button class="botao-primario" onclick="openTarefaModal(<?php echo $id; ?>, null);" style="padding: 5px 15px; font-size: 0.85rem;">
+                                    <?= getIcone('adicionar'); ?> + Nova Tarefa
+                                </button>
+                            <?php endif; ?>
                         </div>
-                        <?php if(empty($proj['tarefas_lista'])): ?>
-                            <div style="text-align:center; padding:40px; color:#999; background:#f9f9f9; border-radius:8px;">Nenhuma tarefa cadastrada.</div>
-                        <?php else: foreach($proj['tarefas_lista'] as $task): ?>
-                            <div style="display:flex; justify-content:space-between; padding:15px 0; border-bottom:1px solid #f9f9f9;">
-                                <div>
-                                    <div style="font-weight:600; color:#333;"><?= htmlspecialchars($task['titulo']) ?></div>
-                                    <div style="font-size:0.8rem; color:#888;">Resp: <?= htmlspecialchars($task['responsavel_nome']) ?></div>
-                                </div>
-                                <span style="font-size:0.75rem; padding:4px 10px; background:#f0f0f0; border-radius:4px; font-weight:700; height:fit-content;"><?= str_replace('_', ' ', $task['status']) ?></span>
-                            </div>
-                        <?php endforeach; endif; ?>
+                        
+                        <div class="tarefas-lista-container">
+                            <?php if (empty($proj['tarefas_lista'])): ?>
+                                <p style="color: #7f8c8d; text-align:center; padding:20px;">Nenhuma tarefa cadastrada neste projeto.</p>
+                            <?php else: ?>
+                                <?php foreach ($proj['tarefas_lista'] as $tarefa): 
+                                    $statusClass = strtolower(str_replace('_', '', $tarefa['status']));
+                                    $prazo = $tarefa['prazo'] ? date('d/m/Y', strtotime($tarefa['prazo'])) : 'Indefinido';
+                                ?>
+                                    <div class="tarefa-item">
+                                        <div style="flex-grow: 1;">
+                                            <div style="font-weight: 600; color: #2c3e50;"><?= htmlspecialchars($tarefa['titulo']); ?></div>
+                                            <div style="font-size: 0.85rem; color: #7f8c8d; margin-top: 3px;">
+                                                Resp: <?= htmlspecialchars($tarefa['responsavel_nome']); ?> | 
+                                                Prazo: <?= $prazo; ?>
+                                            </div>
+                                        </div>
+                                        <div style="min-width: 150px; text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+                                            <span class="st-badge <?= $statusClass; ?>"><?= statusTarefaLabel($tarefa['status']); ?></span>
+
+                                            <?php if ($pode_editar || $tarefa['responsavel_id'] == $usuario['id']): ?>
+                                                <button class="btn-icone" title="Editar Tarefa" onclick="openTarefaModal(<?php echo $proj['id']; ?>, <?php echo $tarefa['id']; ?>);">
+                                                    <?= getIcone('editar'); ?>
+                                                </button>
+                                            <?php endif; ?>
+
+                                            <?php 
+                                            if (in_array($usuario['papel'], ['DONO', 'LIDER', 'GESTOR'])): 
+                                            ?>
+                                                <button class="btn-icone btn-icone-perigo" title="Excluir Tarefa" onclick="confirmarExclusaoTarefa(<?php echo $tarefa['id']; ?>)">
+                                                    <?= getIcone('lixo'); ?>
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
 
@@ -169,7 +254,8 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                         <div style="margin-top:20px;">
                             <span style="font-size:0.75rem; color:#999; font-weight:700; display:block; margin-bottom:5px;">GESTOR</span>
                             <div style="display:flex; align-items:center; gap:8px; font-weight:600; color:#333;">
-                                <div style="width:24px; height:24px; background:#6A66FF; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.7rem;"><?= strtoupper(substr($proj['nome_gestor']??'U',0,1)) ?></div>
+                                <?php $inicialGestor = strtoupper(substr($proj['nome_gestor'] ?? 'U', 0, 1)); ?>
+                                <div class="team-avatar" style="width:24px; height:24px; background:#6A66FF; color:white; font-size:0.7rem;"><?= $inicialGestor ?></div>
                                 <?= htmlspecialchars($proj['nome_gestor'] ?? 'Não definido') ?>
                             </div>
                         </div>
@@ -182,29 +268,29 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
             <div class="content-box">
                 <div class="box-title">
                     <span><?= getIcone('users') ?> Membros Envolvidos & Desempenho</span>
-                    <?php if($pode_editar): ?>
+                    <?php if ($pode_editar): ?>
                         <button class="botao-secundario" onclick="abrirModalEditarProjeto(<?= $projJson ?>)" style="padding:5px 15px; font-size:0.85rem;">+ Adicionar Equipe</button>
                     <?php endif; ?>
                 </div>
-                <?php if(empty($membrosProjeto)): ?>
+                <?php if (empty($membrosProjeto)): ?>
                     <p style="text-align:center; color:#999;">Nenhum membro vinculado.</p>
                 <?php else: ?>
                     <div class="team-grid">
-                        <?php foreach($membrosProjeto as $mem): $iniciais = strtoupper(substr($mem['nome'], 0, 2)); ?>
-                        <div class="team-card">
-                            <div class="team-avatar"><?= $iniciais ?></div>
-                            <div class="team-info">
-                                <h4 style="margin:0; font-size:1rem; color:#333;"><?= htmlspecialchars($mem['nome']) ?></h4>
-                                <p style="margin:2px 0 5px; font-size:0.8rem; color:#888;"><?= htmlspecialchars($mem['cargo_detalhe'] ?: 'Colaborador') ?></p>
-                                <div style="font-size:0.75rem; font-weight:600; color:#6A66FF;">
-                                    <?php if($mem['cargo_detalhe'] == 'CEO'):?>
-                                        <?= ''?>
-                                    <?php else:?>
-                                        <?= $mem['tarefas_feitas'] ?> Entregas
-                                    <?php endif; ?>
+                        <?php foreach ($membrosProjeto as $mem): 
+                            $iniciais = strtoupper(substr($mem['nome'], 0, 2)); 
+                        ?>
+                            <div class="team-card">
+                                <div class="team-avatar"><?= $iniciais ?></div>
+                                <div class="team-info">
+                                    <h4 style="margin:0; font-size:1rem; color:#333;"><?= htmlspecialchars($mem['nome']) ?></h4>
+                                    <p style="margin:2px 0 5px; font-size:0.8rem; color:#888;"><?= htmlspecialchars($mem['cargo_detalhe'] ?: 'Colaborador') ?></p>
+                                    <div style="font-size:0.75rem; font-weight:600; color:#6A66FF;">
+                                        <?php if ($mem['cargo_detalhe'] != 'CEO'):?>
+                                            <?= $mem['tarefas_feitas'] ?> Entregas
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
@@ -215,29 +301,34 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
             <div class="content-box">
                 <div class="box-title">
                     <span><?= getIcone('pasta') ?> Arquivos e Links Públicos</span>
-                    <?php if($pode_editar): ?>
+                    <?php if ($pode_editar): ?>
                         <button class="botao-secundario" onclick="abrirModalEditarProjeto(<?= $projJson ?>)" style="padding:5px 15px; font-size:0.85rem;">+ Adicionar Arquivos</button>
                     <?php endif; ?>
                 </div>
                 
                 <div class="file-grid"> 
-                    <?php if(empty($proj['links'])): ?>
+                    <?php 
+                    $arquivosPublicos = array_filter($proj['links'] ?? [], function($arq) {
+                        return ($arq['tipo'] !== 'logo');
+                    });
+                    ?>
+                    <?php if (empty($arquivosPublicos)): ?>
                         <p style="color:#999; grid-column:1/-1; text-align:center; padding: 20px;">Nenhum arquivo público compartilhado.</p>
-                    <?php else: foreach($proj['links'] as $arq): 
-                        if($arq['tipo'] === 'logo') continue; 
+                    <?php else: foreach ($arquivosPublicos as $arq): 
                         $icone = ($arq['tipo'] === 'link') ? getIcone('link') : getIcone('documento'); 
+                        $label = ($arq['tipo']==='link') ? 'Link Externo' : 'Arquivo';
                     ?>
                         <a href="<?= $arq['url'] ?>" target="_blank" class="file-card-item">
                             <div class="file-icon-circle"><?= $icone ?></div>
                             <div style="font-size:0.9rem; font-weight:600; color:#333; margin-bottom:5px; word-break:break-word;"><?= htmlspecialchars($arq['titulo']) ?></div>
-                            <span style="font-size:0.75rem; color:#999; text-transform:uppercase;"><?= ($arq['tipo']==='link') ? 'Link Externo' : 'Arquivo' ?></span>
+                            <span style="font-size:0.75rem; color:#999; text-transform:uppercase;"><?= $label ?></span>
                         </a>
                     <?php endforeach; endif; ?>
                 </div>
             </div>
         </div>
 
-        <?php if($is_socio): ?>
+        <?php if ($is_socio): ?>
         <div id="tab-restrito" class="tab-content full-layout">
             <div class="content-box" style="border-color:#ffcdd2;">
                 <div class="box-title" style="color:#c62828;">
@@ -246,9 +337,9 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                 </div>
                 
                 <div class="file-grid">
-                    <?php if(empty($proj['privados'])): ?>
+                    <?php if (empty($proj['privados'])): ?>
                         <p style="color:#999; grid-column:1/-1; text-align:center; padding: 20px;">Nenhum documento confidencial.</p>
-                    <?php else: foreach($proj['privados'] as $arq): 
+                    <?php else: foreach ($proj['privados'] as $arq): 
                         $icone = ($arq['tipo'] === 'link') ? getIcone('link') : getIcone('documento'); 
                     ?>
                         <a href="<?= $arq['url'] ?>" target="_blank" class="file-card-item" style="background:#fffafa; border-color:#ffcdd2;">
@@ -263,13 +354,73 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
         <?php endif; ?>
     </div>
 
+
+    <div id="modalTarefa" class="modal">
+        <div class="modal-content" style="width: 500px;">
+            <span class="close-btn" onclick="closeModal('modalTarefa')">&times;</span>
+            <h3 id="modalTarefaTitle" style="margin-top: 0;">Nova Tarefa</h3>
+
+            <form id="formCriarTarefa">
+                <input type="hidden" name="projeto_id" id="tarefaProjetoId" value="<?php echo $id; ?>">
+                <input type="hidden" name="id" id="tarefaId" value="">
+
+                <div class="form-group">
+                    <label for="nomeTarefa">Nome da Tarefa:</label>
+                    <input type="text" id="nomeTarefa" name="nome" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="descricaoTarefa">Descrição:</label>
+                    <textarea id="descricaoTarefa" name="descricao" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="responsavelTarefa">Responsável:</label>
+                    <select id="responsavelTarefa" name="responsavel_id" required>
+                        <option value="">Selecione um membro...</option>
+                        <?php foreach ($membrosProjeto as $membro): ?>
+                            <?php if($membro['cargo_detalhe'] != 'CEO' && $membro['cargo_detalhe'] != 'Gestor'):?>
+                                <option value="<?= $membro['id'] ?>"><?= htmlspecialchars($membro['nome']) ?></option>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div style="display:flex; gap: 20px;">
+                    <div style="flex:1;">
+                        <div class="form-group">
+                            <label for="prazoTarefa">Prazo:</label>
+                            <input type="date" id="prazoTarefa" name="prazo">
+                        </div>
+                    </div>
+                    <div style="flex:1;">
+                        <div class="form-group">
+                            <label for="statusTarefa">Status:</label>
+                            <select id="statusTarefa" name="status" required>
+                                <option value="ABERTO">Em Aberto</option>
+                                <option value="EM_ANDAMENTO">Em Andamento</option>
+                                <option value="CONCLUIDA">Concluída</option>
+                                <option value="CANCELADA">Cancelada</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="botao-secundario" onclick="closeModal('modalTarefa')">Cancelar</button>
+                    <button type="submit" class="botao-primario">Salvar Tarefa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <div id="modalProjeto" class="modal">
         <div class="modal-content" style="width: 700px;">
             <h3 id="modalTitle">Editar Projeto</h3>
             <div class="modal-tabs">
                 <div class="modal-tab active" onclick="switchFormTab('info', this)">Informações & Equipe</div>
                 <div class="modal-tab" onclick="switchFormTab('anexos', this)">Anexos e Links</div>
-                <?php if($is_socio): ?>
+                <?php if ($is_socio): ?>
                 <div class="modal-tab" onclick="switchFormTab('privado', this)" style="color:#6A66FF;"><?= getIcone('cadeado') ?> Área do Sócio</div>
                 <?php endif; ?>
             </div>
@@ -322,6 +473,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                     <div class="form-group">
                         <label>Adicionar Arquivos Públicos</label>
                         <input type="file" name="docs_publicos[]" multiple class="campo-form" style="padding:10px;">
+                        <div id="arquivosAtuaisPublicos" class="arquivos-atuais-container"></div>
                     </div>
                     <div class="form-group">
                         <label>Links Externos (Atuais e Novos)</label>
@@ -330,34 +482,52 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                     </div>
                 </div>
 
-                <?php if($is_socio): ?>
+                <?php if ($is_socio): ?>
                 <div id="tab-privado" class="tab-panel">
-                    <div class="form-group"><label>Adicionar Documentos Confidenciais</label><input type="file" name="docs_privados[]" multiple class="campo-form"></div>
-                    <div class="form-group"><label>Links Privados</label><div id="containerLinksPrivados"></div><button type="button" onclick="addLinkInput('containerLinksPrivados', true)" class="btn-add-mini">+ Link Privado</button></div>
+                    <div class="form-group">
+                        <label>Adicionar Documentos Confidenciais</label>
+                        <input type="file" name="docs_privados[]" multiple class="campo-form">
+                        <div id="arquivosAtuaisPrivados" class="arquivos-atuais-container"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Links Privados</label>
+                        <div id="containerLinksPrivados"></div>
+                        <button type="button" onclick="addLinkInput('containerLinksPrivados', true)" class="btn-add-mini">+ Link Privado</button>
+                    </div>
                 </div>
                 <?php endif; ?>
 
                 <div class="modal-footer">
-                    <button type="button" class="botao-secundario" onclick="closeModal()">Cancelar</button>
+                    <button type="button" class="botao-secundario" onclick="closeModal('modalProjeto')">Cancelar</button>
                     <button type="submit" class="botao-primario">Salvar Alterações</button>
                 </div>
             </form>
         </div>
     </div>
-
+                        
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="../js/projetos.js"></script>
+    <script src="../js/tarefas.js"></script> 
     <script>
+        // Função JS para fechar modals, acessível globalmente pelos scripts externos
+        window.closeModal = function(id) {
+            const modal = document.getElementById(id);
+            // CORREÇÃO APLICADA AQUI: Garante o fechamento usando !important
+            if (modal) modal.style.setProperty('display', 'none', 'important');
+        };
+
+        // Função JS para trocar as abas principais (Visão Geral, Equipe, etc.)
         function switchPageTab(tabName, btn) {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById('tab-'+tabName).classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
             document.querySelectorAll('.page-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         }
 
-        // Lógica do Dropdown Multi-Select (Replicada para funcionar nesta página)
+        // Lógica do Dropdown Multi-Select (Replicada e centralizada)
         document.addEventListener('DOMContentLoaded', () => {
             const wrapper = document.querySelector('.custom-select-wrapper');
-            if(wrapper) {
+            if (wrapper) {
                 wrapper.addEventListener('click', function() {
                     this.querySelector('.custom-select').classList.toggle('open');
                 });
@@ -369,6 +539,14 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                     atualizarInputsEquipe();
                 });
             });
+            
+            // Troca de abas dentro do modal (Projeto)
+            window.switchFormTab = function(tabName, btn) {
+                document.querySelectorAll('#modalProjeto .tab-panel').forEach(c => c.classList.remove('active'));
+                document.getElementById('tab-' + tabName).classList.add('active');
+                document.querySelectorAll('#modalProjeto .modal-tab').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            };
         });
 
         // Função global para ser acessada pelo JS externo
@@ -403,6 +581,48 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                 triggerText.style.fontWeight = '400';
             }
         }
+
+        window.confirmarExclusaoTarefa = async function(id) {
+            // Confirmação explícita para exclusão definitiva
+            if (!confirm("ATENÇÃO: A exclusão definitiva apagará a tarefa e todos os seus comentários. Tem certeza?")) {
+                return;
+            }
+
+            if (!id) {
+                alert("ID da tarefa não fornecido.");
+                return;
+            }
+
+            try {
+                // 1. Requisição usando fetch
+                const resp = await fetch('api/tarefa_excluir.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded' 
+                    },
+                    body: new URLSearchParams({ // Envia os dados como form-data
+                        id: id
+                    })
+                });
+
+                const json = await resp.json();
+
+                if (json.ok) {
+                    alert(json.mensagem);
+                    window.location.reload(); // Recarrega a página após o sucesso
+                } else {
+                    // Erro de lógica (ex: permissão negada) tratado pelo PHP
+                    alert('Erro ao excluir: ' + (json.erro || "Erro ao processar a exclusão."));
+                }
+                
+            } catch (err) {
+                // 3. Tratamento de Erro de Conexão ou Resposta Inválida
+                console.error("Erro na requisição fetch:", err);
+                alert("Erro de conexão ou falha ao receber a resposta do servidor.");
+            }
+        }
     </script>
+</body>
+</html>
 </body>
 </html>

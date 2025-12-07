@@ -2,53 +2,55 @@
 // ARQUIVO: public/tarefa.php
 // =============================================================================
 // CONTEÚDO DO MODAL DE CRIAÇÃO/EDIÇÃO DE TAREFAS
-// Este arquivo é incluído em public/projeto_detalhes.php
-// As variáveis $id (id do projeto) e $membrosProjeto devem estar disponíveis no escopo de inclusão.
+// Adaptado para funcionar tanto em Projetos quanto no Dashboard
 // =============================================================================
 
-// Verifica se as variáveis essenciais estão definidas
-if (!isset($id) || !isset($membrosProjeto)) {
-    // Para um arquivo de inclusão, um aviso é mais adequado que um 'die'
-    // Mas para garantir a execução segura no contexto esperado:
-    echo '<p style="color:red; font-weight:bold;">Erro: Variáveis essenciais para o modal de tarefas não foram definidas.</p>';
-    return; // Interrompe a inclusão
-}
+// PREVENÇÃO DE ERRO:
+// Se as variáveis não existirem (uso no Dashboard), definimos valores vazios padrão
+$idProjetoContexto = isset($id) ? $id : '';
+$listaMembrosContexto = isset($membrosProjeto) ? $membrosProjeto : [];
 ?>
 
 <div id="modalTarefa" class="modal">
     <div class="modal-content" style="width: 500px;">
         <span class="close-btn" onclick="closeModal('modalTarefa')">&times;</span>
-        <h3 id="modalTarefaTitle" style="margin-top: 0;">Nova Tarefa</h3>
+        <h3 id="modalTarefaTitle" style="margin-top: 0; color: #2b3674;">Nova Tarefa</h3>
 
         <form id="formCriarTarefa">
-            <input type="hidden" name="projeto_id" id="tarefaProjetoId" value="<?php echo $id; ?>">
+            <input type="hidden" name="projeto_id" id="tarefaProjetoId" value="<?= $idProjetoContexto ?>">
             <input type="hidden" name="id" id="tarefaId" value="">
 
             <div class="form-group">
                 <label for="nomeTarefa">Nome da Tarefa:</label>
-                <input type="text" id="nomeTarefa" name="nome" required>
+                <input type="text" id="nomeTarefa" name="nome" required class="campo-padrao">
             </div>
 
             <div class="form-group">
                 <label for="descricaoTarefa">Descrição:</label>
-                <textarea id="descricaoTarefa" name="descricao" rows="3"></textarea>
+                <textarea id="descricaoTarefa" name="descricao" rows="3" class="campo-padrao"></textarea>
             </div>
             
             <div style="display:flex; gap: 20px;">
                 <div style="flex:1;">
                     <div class="form-group">
                         <label for="responsavelTarefa">Responsável:</label>
-                        <select id="responsavelTarefa" name="responsavel_id" required>
-                            <option value="">Selecione um membro...</option>
+                        <select id="responsavelTarefa" name="responsavel_id" required class="campo-padrao">
+                            <option value="">Selecione...</option>
                             <?php 
-                            // Lista apenas membros que não são CEO ou Gestor para serem responsáveis por tarefas
-                            foreach ($membrosProjeto as $membro): 
-                                if(!in_array($membro['cargo_detalhe'], ['CEO', 'Gestor'])): // Filtro mantido
+                            // LÓGICA CORRIGIDA (HIERARQUIA HÍBRIDA):
+                            // Removemos o 'if' que bloqueava CEO/Gestor.
+                            // Agora todos aparecem, pois líderes também podem executar tarefas.
+                            if (!empty($listaMembrosContexto)) {
+                                foreach ($listaMembrosContexto as $membro): 
+                                    // Adiciona o cargo visualmente para facilitar a escolha
+                                    $cargoLabel = !empty($membro['cargo_detalhe']) ? " (" . $membro['cargo_detalhe'] . ")" : "";
                             ?>
-                                <option value="<?= $membro['id'] ?>"><?= htmlspecialchars($membro['nome']) ?></option>
+                                <option value="<?= $membro['id'] ?>">
+                                    <?= htmlspecialchars($membro['nome']) . htmlspecialchars($cargoLabel) ?>
+                                </option>
                             <?php 
-                                endif;
-                            endforeach; 
+                                endforeach; 
+                            }
                             ?>
                         </select>
                     </div>
@@ -56,7 +58,7 @@ if (!isset($id) || !isset($membrosProjeto)) {
                 <div style="flex:1;">
                     <div class="form-group">      
                         <label for="prioridade">Prioridade:</label>
-                            <select id="prioridade" name="prioridade" required>
+                            <select id="prioridade" name="prioridade" required class="campo-padrao">
                                 <option value="NORMAL">Normal</option>
                                 <option value="IMPORTANTE">Importante</option>
                                 <option value="URGENTE">Urgente</option>
@@ -69,13 +71,13 @@ if (!isset($id) || !isset($membrosProjeto)) {
                 <div style="flex:1;">
                     <div class="form-group">
                         <label for="prazoTarefa">Prazo:</label>
-                        <input type="date" id="prazoTarefa" name="prazo">
+                        <input type="date" id="prazoTarefa" name="prazo" class="campo-padrao">
                     </div>
                 </div>
                 <div style="flex:1;">
                     <div class="form-group">
                         <label for="statusTarefa">Status:</label>
-                        <select id="statusTarefa" name="status" required>
+                        <select id="statusTarefa" name="status" required class="campo-padrao">
                             <option value="ABERTO">Em Aberto</option>
                             <option value="EM_ANDAMENTO">Em Andamento</option>
                             <option value="CONCLUIDA">Concluída</option>

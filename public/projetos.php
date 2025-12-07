@@ -33,7 +33,7 @@ $listaEquipes = listarEquipes($empresaId);
     </div>
 
     <div class="main-content">
-        <?php renderizar_topo_personalizado(); ?>
+
 
         <div style="display:flex; justify-content:space-between; align-items:end; margin-bottom: 30px;">
             <div>

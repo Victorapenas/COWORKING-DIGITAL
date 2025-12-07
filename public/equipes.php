@@ -99,7 +99,7 @@ $pode_editar = ($is_dono || $papel === 'GESTOR');
             </div>
             <?php endif; ?>
 
-            <?php foreach($equipes as $grp): ?>
+<?php foreach($equipes as $grp): ?>
             <div class="team-section">
                 <div class="team-header">
                     <div>
@@ -109,21 +109,50 @@ $pode_editar = ($is_dono || $papel === 'GESTOR');
                     <div style="display:flex; gap:10px;">
                         <?php if($pode_editar): ?>
                             <button class="botao-equipe" onclick="abrirModalMembroComEquipe(<?= $grp['info']['id'] ?>)">+ Membro</button>
-                            
                             <?php if(strtolower($grp['info']['nome']) !== 'geral'): ?>
                                 <button class="btn-icon del" onclick="confirmarExclusaoEquipe(<?= $grp['info']['id'] ?>, '<?= addslashes($grp['info']['nome']) ?>')"><?= getIcone('lixo') ?></button>
                             <?php endif; ?>
-                            
                         <?php endif; ?>
                     </div>
                 </div>
+                
                 <?php 
-                    if(empty($grp['membros'])) {
-                        echo '<div class="empty-state-card"><div class="empty-state-icon">'.getIcone('users').'</div><strong>Equipe vazia</strong><span style="font-size:0.85rem">Adicione membros para começar.</span></div>';
+                    if(empty($grp['membros']) && empty($grp['apoio'])) {
+                        echo '<div class="empty-state-card"><div class="empty-state-icon">'.getIcone('users').'</div><strong>Equipe vazia</strong><span style="font-size:0.85rem">Adicione membros ou atribua tarefas.</span></div>';
                     } else {
                         foreach($grp['membros'] as $m) echo renderizarMembroCard($m, $pode_editar, 'EQUIPE'); 
                     }
                 ?>
+
+                <?php if(!empty($grp['apoio'])): ?>
+                    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #eee;">
+                        <h5 style="margin:0 0 10px 0; color:#999; font-size:0.8rem; text-transform:uppercase;">
+                            🤝 Colaboração de outras equipes
+                        </h5>
+                        <?php foreach($grp['apoio'] as $a): ?>
+                            <div class="member-card-modern" style="border-left: 3px solid #ffce20; background: #fffcf5;">
+                                <div class="mem-card-header">
+                                    <div class="mem-avatar-large" style="width:45px; height:45px; font-size:0.9rem;">
+                                        <?= strtoupper(substr($a['nome'], 0, 2)) ?>
+                                    </div>
+                                    <div class="mem-info">
+                                        <h4 style="font-size:0.95rem;"><?= htmlspecialchars($a['nome']) ?></h4>
+                                        <p style="font-size:0.75rem;">
+                                            Vem de: <strong><?= htmlspecialchars($a['equipe_origem']) ?></strong>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="mem-footer" style="padding-top:10px; margin-top:0;">
+                                    <span class="role-tag" style="background:#fff8e1; color:#f57f17; font-size:0.65rem;">Apoio Técnico</span>
+                                    <div style="font-size:0.75rem; color:#777;">
+                                        <strong><?= $a['total'] ?></strong> Tarefas aqui
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
             </div>
             <?php endforeach; ?>
         </div>

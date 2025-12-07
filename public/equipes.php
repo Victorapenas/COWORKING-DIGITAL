@@ -28,6 +28,7 @@ $pode_editar = ($is_dono || $papel === 'GESTOR');
     <title>Gestão de Equipes</title>
     <link rel="stylesheet" href="../css/painel.css">
     <style>
+        /* Estilos específicos desta página que não são globais */
         .section-content { display:none; animation: fadeIn 0.3s ease-in-out; } 
         .section-content.active { display:block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -44,6 +45,7 @@ $pode_editar = ($is_dono || $papel === 'GESTOR');
         .empty-state-card { padding: 30px; text-align: center; border: 2px dashed #e0e0e0; border-radius: 12px; color: #999; background-color: #fcfcfc; margin: 10px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
         .empty-state-icon { font-size: 2rem; color: #ccc; margin-bottom: 5px; }
 
+        /* Estilo local para o cabeçalho dos modais internos */
         .modal-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #eee; }
         .modal-tab { padding: 10px 15px; cursor: pointer; color: #666; font-weight: 600; border-bottom: 2px solid transparent; }
         .modal-tab.active { color: #0d6efd; border-bottom-color: #0d6efd; }
@@ -52,10 +54,7 @@ $pode_editar = ($is_dono || $papel === 'GESTOR');
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="logo-box"><?= getIcone('users') ?> <h3 style="color:#0d6efd; margin-left:10px">Coworking</h3></div>
-        <?php renderizar_sidebar(); ?>
-    </div>
+    <?php renderizar_sidebar(); ?>
 
     <div class="main-content">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
@@ -164,13 +163,10 @@ $pode_editar = ($is_dono || $papel === 'GESTOR');
             <h3>Excluir Equipe</h3>
             <p id="msgDelEq" style="color:#666; margin-bottom:20px;"></p>
             <input type="hidden" id="idEquipeDel">
-            
             <p style="font-size:0.85rem; color:#888; background:#f5f5f5; padding:10px; border-radius:5px;">
                 <strong>Nota:</strong> Os membros desta equipe NÃO serão excluídos. Eles serão movidos para "Geral" (Sem Equipe).
             </p>
-
             <input type="hidden" id="checkDelMembros" value="false"> 
-
             <div class="modal-footer" style="justify-content:center; margin-top:20px;">
                 <button class="botao-secundario" onclick="fecharModais()">Cancelar</button>
                 <button class="botao-primario" style="background:#e74c3c;" onclick="confirmarDelEquipe()">Excluir Equipe</button>
@@ -192,8 +188,7 @@ $pode_editar = ($is_dono || $papel === 'GESTOR');
                     <div class="form-group"><label>Cargo / Função</label><input type="text" id="novo_cargo" placeholder="Ex: Desenvolvedor Senior" required></div>
                     <div class="form-group">
                         <label>Equipe Destino</label>
-                        <select id="select_equipe_membro" style="width:100%; padding:10px; border-radius:5px; border:1px solid #ddd;">
-                            <option value="">Sem equipe (Geral)</option>
+                        <select id="select_equipe_membro" class="campo-padrao">                            <option value="">Sem equipe (Geral)</option>
                             <?php foreach($listaEquipesSimples as $eq):?>
                                 <option value="<?=$eq['id']?>"><?=$eq['nome']?></option>
                             <?php endforeach;?>
@@ -217,8 +212,7 @@ $pode_editar = ($is_dono || $papel === 'GESTOR');
                 <form id="formMoveMember">
                     <div class="form-group">
                         <label>Selecione o Colaborador (Apenas Ativos)</label>
-                        <select id="select_membro_existente" required style="width:100%; padding:10px; border-radius:5px; border:1px solid #ddd;">
-                            <option value="">-- Escolha um usuário --</option>
+<select id="select_membro_existente" required class="campo-padrao">                            <option value="">-- Escolha um usuário --</option>
                             <?php foreach($membrosDisponiveis as $md): 
                                 $statusEq = $md['nome_equipe_atual'] ? "(Em: {$md['nome_equipe_atual']})" : "(Sem Equipe)";
                             ?>
@@ -380,7 +374,6 @@ $pode_editar = ($is_dono || $papel === 'GESTOR');
             document.getElementById('modalExcluirMembro').style.display = 'flex';
         }
         
-        // --- FUNÇÃO NOVA ADICIONADA PARA O BOTÃO DA EQUIPE ---
         function confirmarExclusaoEquipe(id, nome) {
             document.getElementById('idEquipeDel').value = id;
             document.getElementById('msgDelEq').innerText = "Você tem certeza que deseja excluir a equipe " + nome + "?";
@@ -391,15 +384,17 @@ $pode_editar = ($is_dono || $papel === 'GESTOR');
 </html>
 
 <?php
+// Substitua a função renderizarMembroCard no final do arquivo equipes.php por esta:
+
 function renderizarMembroCard($m, $podeEditar, $contexto) {
+    // Define papéis e cores
     $papelSistema = $m['papel_sistema'] ?? 'FUNCIONARIO';
-    
-    // Define cores e labels
     $roleClass = 'role-colab';
     $roleLabel = 'Colaborador';
+    
     if ($papelSistema === 'DONO' || $papelSistema === 'LIDER') {
         $roleClass = 'role-dono';
-        $roleLabel = 'Sócio / Lider';
+        $roleLabel = 'Sócio / Líder';
     } elseif ($papelSistema === 'GESTOR') {
         $roleClass = 'role-gestor';
         $roleLabel = 'Gestor';
@@ -408,10 +403,11 @@ function renderizarMembroCard($m, $podeEditar, $contexto) {
     // Status Online
     $onlineClass = $m['is_online'] ? 'online' : '';
     
-    // Cálculo do Progresso para a Barra
+    // Cálculo de Progresso
     $total = (int)$m['total'];
     $concluidas = (int)$m['concluidas'];
     $percent = ($total > 0) ? round(($concluidas / $total) * 100) : 0;
+    $pendentes = $total - $concluidas;
     
     // JSON para JS
     $jsonMembro = htmlspecialchars(json_encode($m), ENT_QUOTES, 'UTF-8');
@@ -419,17 +415,20 @@ function renderizarMembroCard($m, $podeEditar, $contexto) {
     // Botões de Ação
     $botoes = '';
     if ($podeEditar && $contexto !== 'ARQUIVADO') {
-        $botoes .= '<button class="btn-icon" onclick=\'abrirModalEditar('.$jsonMembro.')\' title="Editar">'.getIcone('config').'</button>';
+        $botoes .= '<button class="btn-icon" onclick=\'abrirModalEditar('.$jsonMembro.')\' title="Configurar">'.getIcone('config').'</button>';
         $botoes .= '<button class="btn-icon del" onclick="abrirModalExcluirMembro('.$m['id'].', \''.addslashes($m['nome']).'\')" title="Excluir">'.getIcone('lixo').'</button>';
     } else if ($podeEditar && $contexto === 'ARQUIVADO') {
-        $botoes .= '<button class="btn-icon" onclick="confirmarExclusaoMembro(\'restore\', '.$m['id'].')">'.getIcone('restaurar').'</button>';
-        $botoes .= '<button class="btn-icon del" onclick="confirmarExclusaoMembro(\'hard\', '.$m['id'].')">'.getIcone('lixo').'</button>';
+        $botoes .= '<button class="btn-icon" onclick="confirmarExclusaoMembro(\'restore\', '.$m['id'].')" title="Restaurar">'.getIcone('restaurar').'</button>';
+        $botoes .= '<button class="btn-icon del" onclick="confirmarExclusaoMembro(\'hard\', '.$m['id'].')" title="Excluir Permanentemente">'.getIcone('lixo').'</button>';
     }
 
-    $opacity = ($contexto === 'ARQUIVADO') ? 'opacity: 0.7; filter: grayscale(100%);' : '';
+    // Estilo para arquivados
+    $opacity = ($contexto === 'ARQUIVADO') ? 'opacity: 0.6; filter: grayscale(100%);' : '';
 
+    // HTML do Card
     return '
     <div class="member-card-modern" style="'.$opacity.'">
+        
         <div class="mem-card-header">
             <div class="mem-avatar-large">
                 '.strtoupper(substr($m['nome'], 0, 2)).'
@@ -437,7 +436,7 @@ function renderizarMembroCard($m, $podeEditar, $contexto) {
             </div>
             <div class="mem-info">
                 <h4>'.htmlspecialchars($m['nome']).'</h4>
-                <p>'.htmlspecialchars($m['cargo_detalhe'] ?: 'Membro da Equipe').'</p>
+                <p>'.htmlspecialchars($m['cargo_detalhe'] ?: 'Sem cargo definido').'</p>
             </div>
         </div>
 
@@ -449,9 +448,9 @@ function renderizarMembroCard($m, $podeEditar, $contexto) {
             <div class="prog-track">
                 <div class="prog-fill" style="width: '.$percent.'%"></div>
             </div>
-            <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.75rem; color:#888;">
-                <span>'.$concluidas.' Concluídas</span>
-                <span>'.($total - $concluidas).' Pendentes</span>
+            <div style="display:flex; justify-content:space-between; margin-top:5px; font-size:0.75rem; color:#a3aed0;">
+                <span>'.$concluidas.' entregues</span>
+                <span>'.$pendentes.' pendentes</span>
             </div>
         </div>
 

@@ -1,5 +1,5 @@
 <?php
-// /public/login.php
+// ARQUIVO: public/login.php
 require_once __DIR__ . '/../includes/seguranca.php';
 require_once __DIR__ . '/../includes/ui_auxiliar.php';
 proteger_autenticacao();
@@ -10,13 +10,33 @@ proteger_autenticacao();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Coworking Digital</title>
-    <link rel="stylesheet" href="../css/login.css">
+    
+    <link rel="stylesheet" href="../css/login.css?v=<?php echo time(); ?>">
+    
+    <style>
+        .logo-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 25px;
+            width: 100%;
+        }
+        .logo-box img, 
+        .logo-sistema-img {
+            max-width: 180px !important; /* !important atropela qualquer regra antiga */
+            max-height: 80px !important;
+            width: auto !important;
+            height: auto !important;
+            object-fit: contain;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <div class="painel-auth">
             <div class="card-auth">
                 <?php renderizar_logo(); ?>
+                
                 <h2>Acesso Corporativo</h2>
                 <p class="descricao-pequena">Entre com sua conta empresarial</p>
 
@@ -51,6 +71,6 @@ proteger_autenticacao();
         </div>
         <?php renderizar_painel_info(); ?>
     </div>
-    <script src="../js/login.js"></script>
+    <script src="../js/login.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>

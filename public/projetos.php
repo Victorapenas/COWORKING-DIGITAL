@@ -22,43 +22,18 @@ $listaEquipes = listarEquipes($empresaId);
     <title>Projetos</title>
     <link rel="stylesheet" href="../css/painel.css">
     <style>
-        /* Card Melhorado e Cores de Status mantidos */
-        .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; }
-        .proj-card { 
-            background: white; border: 1px solid #f0f0f0; border-radius: 16px; padding: 25px; 
-            transition: all 0.2s ease; position: relative; overflow: hidden; cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between;
-        }
-        .proj-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); border-color: #6A66FF; }
-        .client-logo-bg { position: absolute; top: -15px; right: -15px; width: 100px; height: 100px; opacity: 0.04; transform: rotate(15deg); pointer-events: none; }
-        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        .st-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; width: fit-content; }
-        .st-PLANEJADO { background: #f3f3f3; color: #777; border: 1px solid #e0e0e0; }
-        .st-PLANEJADO .status-dot { background: #bbb; }
-        .st-EM_ANDAMENTO { background: #e3f2fd; color: #0d6efd; border: 1px solid #bbdefb; }
-        .st-EM_ANDAMENTO .status-dot { background: #0d6efd; }
-        .st-CONCLUIDO { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
-        .st-CONCLUIDO .status-dot { background: #2ecc71; }
-        .st-CANCELADO { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
-        .st-CANCELADO .status-dot { background: #e74c3c; }
-        .proj-actions { 
-            display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding-top: 15px; border-top: 1px dashed #eee; 
-            opacity: 0; transition: 0.3s; 
-        }
-        .proj-card:hover .proj-actions { opacity: 1; }
+        .grid-layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; }
+        .empty-state { grid-column: 1 / -1; text-align: center; padding: 60px; color: #999; border: 2px dashed #eee; border-radius: 16px; display: flex; flex-direction: column; align-items: center; }
+        .empty-state-icon { font-size: 3rem; opacity: 0.3; margin-bottom: 15px; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="logo-box"><?= getIcone('arquivo') ?> <h3 style="color:#0d6efd; margin-left:10px;">Coworking</h3></div>
         <?php renderizar_sidebar(); ?>
     </div>
 
     <div class="main-content">
-        <div class="topbar">
-            <div class="search-box"><input type="text" id="searchBox" placeholder="Pesquisar projetos..." onkeyup="filtrarProjetos()"></div>
-            <div class="profile"><div class="avatar-profile"><?= strtoupper(substr($usuario['nome'], 0, 2)) ?></div></div>
-        </div>
+        <?php renderizar_topo_personalizado(); ?>
 
         <div style="display:flex; justify-content:space-between; align-items:end; margin-bottom: 30px;">
             <div>
@@ -76,10 +51,10 @@ $listaEquipes = listarEquipes($empresaId);
         </div>
 
         <div id="view-ativos" class="main-tab-content">
-            <div class="project-grid">
+            <div class="grid-layout">
                 <?php if (empty($projetosAtivos)): ?>
-                    <div class="empty-state" style="grid-column: 1/-1; text-align:center; padding:60px; color:#999; border:2px dashed #eee; border-radius:16px;">
-                        <div style="font-size:3rem; margin-bottom:15px; opacity:0.3;">📂</div>
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📂</div>
                         <p>Nenhum projeto ativo. Crie o primeiro agora!</p>
                     </div>
                 <?php else: foreach ($projetosAtivos as $p): echo renderizarCardProjeto($p); endforeach; endif; ?>
@@ -87,22 +62,25 @@ $listaEquipes = listarEquipes($empresaId);
         </div>
 
         <div id="view-arquivados" class="main-tab-content" style="display:none;">
-            <div class="project-grid">
+            <div class="grid-layout">
                 <?php if (empty($projetosArquivados)): ?>
-                    <p style="color:#aaa; padding:20px;">Lixeira vazia.</p>
+                    <p style="color:#aaa; padding:20px; grid-column: 1/-1; text-align: center;">Lixeira vazia.</p>
                 <?php else: foreach ($projetosArquivados as $p): echo renderizarCardProjeto($p); endforeach; endif; ?>
             </div>
         </div>
     </div>
 
     <div id="modalProjeto" class="modal">
-        <div class="modal-content" style="width: 700px;">
-            <h3 id="modalTitle">Novo Projeto</h3>
+        <div class="modal-content">
+            <h3 id="modalTitle" style="color:var(--text-main); margin-top:0;">Novo Projeto</h3>
+            
             <div class="modal-tabs">
                 <div class="modal-tab active" onclick="switchFormTab('info', this)">Informações</div>
                 <div class="modal-tab" onclick="switchFormTab('anexos', this)">Anexos e Links</div>
                 <?php if($is_socio): ?>
-                <div class="modal-tab" onclick="switchFormTab('privado', this)" style="color:#6A66FF;"><?= getIcone('cadeado') ?> Área do Sócio</div>
+                <div class="modal-tab" onclick="switchFormTab('privado', this)" style="color:#6A66FF;">
+                    <?= getIcone('cadeado') ?> Área do Sócio
+                </div>
                 <?php endif; ?>
             </div>
 
@@ -119,7 +97,7 @@ $listaEquipes = listarEquipes($empresaId);
                     
                     <div class="form-group">
                         <label>Status Atual</label>
-                        <select name="status" id="projStatus" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                        <select name="status" id="projStatus">
                             <option value="PLANEJADO">Planejado</option>
                             <option value="EM_ANDAMENTO">Em Andamento</option>
                             <option value="CONCLUIDO">Concluído</option>
@@ -155,13 +133,15 @@ $listaEquipes = listarEquipes($empresaId);
                         <input type="file" id="logo_input" name="logo_cliente" accept="image/*" style="display:none;" onchange="previewFile(this)">
                         <div id="logo_preview" style="font-size:0.8rem; margin-top:5px; color:#0d6efd;"></div>
                     </div>
-                    <div class="form-group"><label>Descrição</label><textarea name="descricao" id="projDesc" rows="3" style="width:100%; border:1px solid #ddd; border-radius:8px; padding:10px;"></textarea></div>
+                    
+                    <div class="form-group"><label>Descrição</label><textarea name="descricao" id="projDesc" rows="3"></textarea></div>
                 </div>
 
                 <div id="tab-anexos" class="tab-panel">
                     <div class="form-group">
                         <label>Arquivos Públicos</label>
-                        <input type="file" name="docs_publicos[]" multiple class="campo-form" style="padding:10px;">
+                        <input type="file" name="docs_publicos[]" multiple class="campo-form">
+                        <div id="arquivosAtuaisPublicos" style="margin-top:10px;"></div>
                     </div>
                     <div class="form-group">
                         <label>Links Externos</label>
@@ -172,13 +152,15 @@ $listaEquipes = listarEquipes($empresaId);
 
                 <?php if($is_socio): ?>
                 <div id="tab-privado" class="tab-panel">
-                    <div class="form-group"><label>Contratos / Documentos Confidenciais</label><input type="file" name="docs_privados[]" multiple class="campo-form"></div>
+                    <div class="form-group"><label>Contratos / Documentos Confidenciais</label><input type="file" name="docs_privados[]" multiple class="campo-form">
+                        <div id="arquivosAtuaisPrivados" style="margin-top:10px;"></div>
+                    </div>
                     <div class="form-group"><label>Links Privados</label><div id="containerLinksPrivados"></div><button type="button" onclick="addLinkInput('containerLinksPrivados', true)" class="btn-add-mini">+ Link Privado</button></div>
                 </div>
                 <?php endif; ?>
 
                 <div class="modal-footer">
-                    <button type="button" class="botao-secundario" onclick="closeModal()">Cancelar</button>
+                    <button type="button" class="botao-secundario" onclick="closeModal('modalProjeto')">Cancelar</button>
                     <button type="submit" class="botao-primario">Salvar Projeto</button>
                 </div>
             </form>
@@ -191,18 +173,15 @@ $listaEquipes = listarEquipes($empresaId);
                 <?= getIcone('lixo') ?>
             </div>
             <h3>Gerenciar Projeto</h3>
-            <p id="msgExcluir" style="color:#666; font-size:0.9rem; margin-bottom:20px;">O que deseja fazer com este projeto?</p>
+            <p id="msgExcluir" style="color:#666; font-size:0.9rem; margin-bottom:20px;"></p>
             <input type="hidden" id="idProjetoExcluir">
             
-            <div class="modal-delete-options" style="display:flex; flex-direction:column; gap:10px;">
-                <button id="btnSoftDelete" class="btn-archive" onclick="confirmarAcaoProjeto(null, 'soft')" style="padding:15px; background:#fff3e0; color:#e65100; border:1px solid #ffe0b2; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;">
-                    <?= getIcone('pasta') ?> 
-                    <div style="text-align:left;"><strong>Arquivar Projeto</strong><br><span style="font-size:0.7rem; font-weight:normal;">Mover para aba Arquivados. Pode ser restaurado.</span></div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button id="btnSoftDelete" class="botao-secundario" onclick="confirmarAcaoProjeto(null, 'soft')" style="background:#fff3e0; color:#e65100; border-color:#ffe0b2; display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <?= getIcone('pasta') ?> Arquivar Projeto
                 </button>
-
-                <button id="btnHardDelete" class="btn-delete-hard" onclick="confirmarAcaoProjeto(null, 'hard')" style="padding:15px; background:#ffebee; color:#c62828; border:1px solid #ffcdd2; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;">
-                    <?= getIcone('lixo') ?>
-                    <div style="text-align:left;"><strong>Excluir Definitivamente</strong><br><span style="font-size:0.7rem; font-weight:normal;">Apaga tudo do banco. Irreversível.</span></div>
+                <button id="btnHardDelete" class="botao-secundario" onclick="confirmarAcaoProjeto(null, 'hard')" style="background:#ffebee; color:#c62828; border-color:#ffcdd2; display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <?= getIcone('lixo') ?> Excluir Definitivamente
                 </button>
             </div>
             <button onclick="fecharModalExcluir()" style="margin-top:20px; background:none; border:none; color:#888; cursor:pointer;">Cancelar</button>
@@ -211,7 +190,7 @@ $listaEquipes = listarEquipes($empresaId);
 
     <script src="../js/projetos.js"></script>
     <script>
-        // LOGICA DO MULTI-SELECT DROPDOWN
+        // Scripts auxiliares de UI (dropdown e tabs principais)
         document.querySelector('.custom-select-wrapper').addEventListener('click', function() {
             this.querySelector('.custom-select').classList.toggle('open');
         });
@@ -237,7 +216,7 @@ $listaEquipes = listarEquipes($empresaId);
                 
                 const input = document.createElement('input');
                 input.type = 'hidden';
-                input.name = 'equipes[]'; // Array pro PHP
+                input.name = 'equipes[]';
                 input.value = val;
                 containerHidden.appendChild(input);
             });
@@ -248,30 +227,20 @@ $listaEquipes = listarEquipes($empresaId);
                 triggerText.style.fontWeight = '600';
             } else {
                 triggerText.textContent = 'Selecione as equipes...';
-                triggerText.style.color = '#333';
+                triggerText.style.color = '#999';
                 triggerText.style.fontWeight = '400';
             }
         }
 
-        // Funções UI normais
         function switchMainTab(tab, btn) {
             document.querySelectorAll('.main-tab-content').forEach(d => d.style.display = 'none');
             document.getElementById('view-'+tab).style.display = 'block';
             document.querySelectorAll('.tabs-header .tab-btn').forEach(b => b.classList.remove('active'));
             if(btn) btn.classList.add('active');
         }
-        function switchFormTab(tab, btn) {
-            document.querySelectorAll('#formCriarProjeto .tab-panel').forEach(p => p.classList.remove('active'));
-            document.getElementById('tab-'+tab).classList.add('active');
-            document.querySelectorAll('#formCriarProjeto .modal-tab').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        }
+
         function previewFile(input) {
             if(input.files && input.files[0]) document.getElementById('logo_preview').innerText = "Arquivo: " + input.files[0].name;
-        }
-        function filtrarProjetos() {
-            const term = document.getElementById('searchBox').value.toLowerCase();
-            document.querySelectorAll('.proj-card').forEach(card => card.style.display = card.innerText.toLowerCase().includes(term) ? 'flex' : 'none');
         }
     </script>
 </body>
@@ -279,24 +248,24 @@ $listaEquipes = listarEquipes($empresaId);
 
 <?php
 function renderizarCardProjeto($p) {
-    // CORREÇÃO DO ERRO DO ARRAY: Extrair nomes antes de imprimir
+    // Labels de Equipe
     $teamsArr = [];
     if (!empty($p['equipes']) && is_array($p['equipes'])) {
         foreach($p['equipes'] as $eq) {
-            // Se for array ['id'=>x, 'nome'=>'Y'], pega o nome. Se for string, usa string.
             $teamsArr[] = is_array($eq) ? ($eq['nome'] ?? '') : $eq;
         }
     }
     $teams = !empty($teamsArr) ? implode(', ', $teamsArr) : 'Sem equipe';
 
-    // Status e Labels
+    // Status
     $statusLabel = str_replace('_', ' ', $p['status']);
     $statusClass = 'st-'.$p['status'];
     $logoHtml = !empty($p['logo_url']) ? '<div class="client-logo-bg"><img src="'.$p['logo_url'].'"></div>' : '';
     $jsonProjeto = htmlspecialchars(json_encode($p), ENT_QUOTES, 'UTF-8');
 
-    // Botões
+    // BOTÕES REDONDOS (btn-round)
     $botoes = '<a href="projeto_detalhes.php?id='.$p['id'].'" class="btn-round view" title="Ver Detalhes">'.getIcone('olho').'</a>';
+    
     if ($p['ativo'] == 1) {
         $botoes .= '<button onclick="event.stopPropagation(); abrirModalEditarProjeto('.$jsonProjeto.')" class="btn-round edit" title="Editar">'.getIcone('editar').'</button>';
         $botoes .= '<button onclick="event.stopPropagation(); abrirModalAcao('.$p['id'].', \''.addslashes($p['nome']).'\', \'active_context\')" class="btn-round delete" title="Arquivar">'.getIcone('lixo').'</button>';

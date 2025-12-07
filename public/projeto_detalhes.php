@@ -124,10 +124,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="logo-box"><?= getIcone('arquivo') ?> <h3 style="color:#0d6efd; margin-left:10px">Coworking</h3></div>
-        <?php renderizar_sidebar(); ?>
-    </div>
+    <?php renderizar_sidebar(); ?>
 
     <div class="main-content" style="padding:0; background: #fafafa;">
         

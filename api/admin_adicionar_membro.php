@@ -54,24 +54,34 @@ try {
 
     $pdo = conectar_db();
 
-    // Busca dados da empresa
-    $stmt = $pdo->prepare("SELECT u.empresa_id, e.nome as nome_empresa FROM usuario u JOIN empresa e ON u.empresa_id = e.id WHERE u.id = ?");
+    // Busca dados da empresa (INCLUINDO O PADRÃO DE SENHA)
+    $stmt = $pdo->prepare("SELECT u.empresa_id, e.nome as nome_empresa, e.padrao_senha 
+                           FROM usuario u 
+                           JOIN empresa e ON u.empresa_id = e.id 
+                           WHERE u.id = ?");
     $stmt->execute([$sessao['id']]);
     $info = $stmt->fetch();
 
     if (!$info) throw new Exception("Empresa não encontrada.");
 
-    // Verifica e-mail
+    // Verifica e-mail duplicado
     $stmt = $pdo->prepare("SELECT id FROM usuario WHERE email = ?");
     $stmt->execute([$email]);
     if ($stmt->fetch()) throw new Exception("E-mail já cadastrado.");
 
-    // Senha padrão
-    $nome_empresa_limpo = str_replace(' ', '', ucwords(strtolower($info['nome_empresa'])));
-    $senha_padrao = "@" . $nome_empresa_limpo . "123";
+    // --- DEFINIÇÃO DA SENHA ---
+    if (!empty($info['padrao_senha'])) {
+        // Usa o padrão definido nas configurações da empresa
+        $senha_padrao = $info['padrao_senha'];
+    } else {
+        // Fallback: Lógica antiga (@NomeEmpresa123)
+        $nome_empresa_limpo = str_replace(' ', '', ucwords(strtolower($info['nome_empresa'])));
+        $senha_padrao = "@" . $nome_empresa_limpo . "123";
+    }
+    
     $senha_hash = password_hash($senha_padrao, PASSWORD_DEFAULT);
 
-    // Insere
+    // Insere o usuário
     $sql = "INSERT INTO usuario (empresa_id, papel_id, equipe_id, nome, email, cargo_detalhe, senha_hash, ativo, precisa_redefinir_senha) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1)";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$info['empresa_id'], $papel_id, $equipe_id, $nome, $email, $funcao, $senha_hash]);
@@ -79,7 +89,7 @@ try {
     $resposta = [
         'ok' => true,
         'mensagem' => 'Membro adicionado com sucesso!',
-        'senha_gerada' => $senha_padrao
+        'senha_gerada' => $senha_padrao // Retorna para exibir no alerta do JS
     ];
 
 } catch (Exception $e) {

@@ -1,7 +1,129 @@
 <?php
 // ARQUIVO: includes/ui_auxiliar.php
+require_once __DIR__ . '/funcoes.php'; 
+
+// =============================================================================
+// RENDERIZA A SIDEBAR COMPLETA (DINÂMICA)
+// =============================================================================
+function renderizar_sidebar(){
+    $paginaAtual = basename($_SERVER['PHP_SELF']);
+    
+    // --- Lógica para buscar Logo e Nome do Cliente ---
+    $logoClienteUrl = null;
+    $nomeEmpresa = "Minha Empresa"; // Fallback padrão
+    
+    if (isset($_SESSION[SESSAO_USUARIO_KEY]['empresa_id'])) {
+        try {
+            $pdo = conectar_db();
+            $stmt = $pdo->prepare("SELECT nome, logo_url FROM empresa WHERE id = ?");
+            $stmt->execute([$_SESSION[SESSAO_USUARIO_KEY]['empresa_id']]);
+            $empresa = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($empresa) {
+                $nomeEmpresa = $empresa['nome'];
+                // Verifica arquivo físico
+                if (!empty($empresa['logo_url']) && file_exists(__DIR__ . '/../public/' . $empresa['logo_url'])) {
+                    $logoClienteUrl = '../public/' . $empresa['logo_url'];
+                }
+            }
+        } catch (Exception $e) { /* Silêncio */ }
+    }
+    ?>
+    
+    <div class="sidebar">
+        
+        <div class="sidebar-header">
+            <div class="client-logo-wrapper">
+                <?php if ($logoClienteUrl): ?>
+                    <img src="<?= $logoClienteUrl ?>" alt="<?= htmlspecialchars($nomeEmpresa) ?>" class="client-logo-img">
+                <?php else: ?>
+                    <span style="color:#0d6efd; font-weight:800; font-size:1.8rem;">
+                        <?= strtoupper(substr($nomeEmpresa, 0, 1)) ?>
+                    </span>
+                <?php endif; ?>
+            </div>
+            
+            <div class="client-name-text">
+                <?= htmlspecialchars($nomeEmpresa) ?>
+            </div>
+            <div style="font-size: 0.75rem; color: #a3aed0; margin-top: 4px; font-weight: 500;">
+                Espaço de Trabalho
+            </div>
+        </div>
+
+        <div class="sidebar-menu-container">
+            <div class="nav-title">PRINCIPAL</div>
+
+            <a href="dashboard.php" class="nav-item <?= $paginaAtual == 'dashboard.php' ? 'active' : '' ?>">
+                <?= getIcone('arquivo') ?> Visão Geral
+            </a>
+
+            <a href="equipes.php" class="nav-item <?= $paginaAtual == 'equipes.php' ? 'active' : '' ?>">
+                <?= getIcone('users') ?> Gestão de Equipes
+            </a>
+
+            <a href="projetos.php" class="nav-item <?= (strpos($paginaAtual, 'projeto') !== false) ? 'active' : '' ?>">
+                <?= getIcone('pasta') ?> Projetos
+            </a>
+
+            <a href="minhas_tarefas.php" class="nav-item <?= (strpos($paginaAtual, 'tarefa') !== false && strpos($paginaAtual, 'projeto') === false) ? 'active' : '' ?>">
+                <?= getIcone('task') ?> Minhas Tarefas
+            </a>
+
+            <a href="calendario.php" class="nav-item <?= $paginaAtual == 'calendario.php' ? 'active' : '' ?>">
+                <?= getIcone('calendario') ?> Calendário
+            </a>
+
+            <a href="relatorios.php" class="nav-item <?= $paginaAtual == 'relatorios.php' ? 'active' : '' ?>">
+                <?= getIcone('documento') ?> Relatórios
+            </a>
+
+            <a href="emergenciais.php" class="nav-item <?= $paginaAtual == 'emergenciais.php' ? 'active' : '' ?>">
+                <?= getIcone('alerta') ?> Emergenciais
+            </a>
+
+            <div class="separator"></div>
+            <div class="nav-title">SISTEMA</div>
+
+            <a href="configuracoes.php" class="nav-item <?= $paginaAtual == 'configuracoes.php' ? 'active' : '' ?>">
+                <?= getIcone('config') ?> Configurações
+            </a>
+
+            <a href="#" class="nav-item" onclick="logoutSistema()">
+                <?= getIcone('sair') ?> Sair
+            </a>
+        </div>
+
+        <div class="sidebar-footer">
+            <?php 
+                $logoSys = '../imgs/logo coworking.png';
+                if (!file_exists(__DIR__ . '/../imgs/logo coworking.png')) {
+                    $logoSys = '../css/coworking_digital.svg';
+                }
+            ?>
+            <img src="<?= $logoSys ?>" alt="Sistema Coworking" class="system-logo-img">
+        </div>
+
+    </div>
+    <script>
+        function logoutSistema() {
+            if(confirm('Deseja realmente sair do sistema?')) {
+                // Efeito visual de carregamento
+                document.body.style.cursor = 'wait';
+                fetch('../api/logout.php', { method: 'POST' })
+                    .then(() => window.location.href = 'login.php')
+                    .catch(() => window.location.href = 'login.php');
+            }
+        }
+    </script>
+    <?php
+}
+
+// =============================================================================
+// OUTRAS FUNÇÕES DE UI (PAINEL LOGIN, HEADER, ETC)
+// =============================================================================
 
 function renderizar_painel_info() {
+    // Ícones decorativos para a lateral do login
     $icones = [
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>',
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V8h12v3z"/></svg>',
@@ -12,7 +134,7 @@ function renderizar_painel_info() {
     <div class="painel-info">
         <div class="info-icones">
             <?php foreach ($icones as $icone): ?>
-                <div class="info-icone-wrap"><?= $icone ?></div>
+                <div class="info-icone-wrap" style="fill:white"><?= $icone ?></div>
             <?php endforeach; ?>
         </div>
         <h2 class="info-titulo">Gerencie seu coworking com inteligência</h2>
@@ -22,89 +144,31 @@ function renderizar_painel_info() {
 }
 
 function renderizar_logo() {
+    $logoSistema = '../imgs/logo coworking.png'; 
+    if (!file_exists(__DIR__ . '/../imgs/logo coworking.png')) {
+        $logoSistema = '../css/coworking_digital.svg';
+    }
     ?>
-    <div class="logo">
-        <div class="logo-icon">
-            <img src="../css/coworking_digital.svg" alt="Coworking Digital">
-        </div>
+    <div class="logo-box">
+        <img src="<?= $logoSistema ?>" alt="Coworking Digital" class="logo-sistema-img">
     </div>
     <?php
 }
 
-function renderizar_sidebar(){
-    // Identifica a página atual para marcar no menu
-    $paginaAtual = basename($_SERVER['PHP_SELF']);
+function renderizar_topo_personalizado() {
+    $nomeUsuario = htmlspecialchars($_SESSION[SESSAO_USUARIO_KEY]['nome'] ?? 'Usuário');
+    $iniciais = strtoupper(substr($nomeUsuario, 0, 2));
     ?>
-    <div class="nav-menu">
-        <h5>NAVEGAÇÃO</h5>
+    <div class="topbar">
+        <div></div> 
 
-        <a href="dashboard.php" class="<?= $paginaAtual == 'dashboard.php' ? 'active' : '' ?>">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-            Visão Geral
-        </a>
-
-        <a href="equipes.php" class="<?= $paginaAtual == 'equipes.php' ? 'active' : '' ?>">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.57.85 2.76 2.33 2.98 3.45H23v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-            Gestão de Equipes
-        </a>
-
-        <a href="projetos.php" class="<?= (strpos($paginaAtual, 'projeto') !== false) ? 'active' : '' ?>">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
-            Projetos
-        </a>
-
-        <a href="calendario.php" class="<?= $paginaAtual == 'calendario.php' ? 'active' : '' ?>">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM5 7V6h14v1H5z"/></svg>
-            Calendário
-        </a>
-
-        <a href="arquivos.php" class="<?= $paginaAtual == 'arquivos.php' ? 'active' : '' ?>">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>
-            Arquivos
-        </a>
-
-        <div class="separator"></div>
-
-        <a href="configuracoes.php" class="<?= $paginaAtual == 'configuracoes.php' ? 'active' : '' ?>">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.38-1.09-.72-1.71-.98L15 2H9L8.71 4.43c-.62.26-1.19.6-1.71.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.31.61.22l2.49-1c.52.38 1.09.72 1.71.98L9 22h6l.29-2.43c.62-.26 1.19-.6 1.71-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/></svg>
-            Configurações
-        </a>
-
-        <a href="#" id="btnLogout">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H9v2h9.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-            Sair
-        </a>
+        <div class="profile">
+            <div style="text-align:right; font-size:0.85rem; color:#666; margin-right:10px;">
+                Olá, <strong><?= $nomeUsuario ?></strong>
+            </div>
+            <div class="avatar-profile"><?= $iniciais ?></div>
+        </div>
     </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const btnLogout = document.getElementById('btnLogout');
-            if (btnLogout) {
-                btnLogout.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    
-                    // Feedback visual opcional (cursor loading)
-                    document.body.style.cursor = 'wait';
-
-                    try {
-                        const resp = await fetch('../api/logout.php', { method: 'POST' });
-                        const json = await resp.json();
-                        
-                        if (json.ok) {
-                            window.location.href = 'login.php';
-                        } else {
-                            // Se a API retornar erro, força redirecionamento mesmo assim
-                            window.location.href = 'login.php';
-                        }
-                    } catch (err) {
-                        console.error('Erro ao sair:', err);
-                        // Fallback em caso de erro de rede
-                        window.location.href = 'login.php';
-                    }
-                });
-            }
-        });
-    </script>
     <?php
 }
 ?>

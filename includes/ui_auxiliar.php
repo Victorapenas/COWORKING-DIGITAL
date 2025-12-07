@@ -77,9 +77,6 @@ function renderizar_sidebar(){
                 <?= getIcone('documento') ?> Relatórios
             </a>
 
-            <a href="emergenciais.php" class="nav-item <?= $paginaAtual == 'emergenciais.php' ? 'active' : '' ?>">
-                <?= getIcone('alerta') ?> Emergenciais
-            </a>
 
             <div class="separator"></div>
             <div class="nav-title">SISTEMA</div>

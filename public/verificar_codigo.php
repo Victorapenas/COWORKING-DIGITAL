@@ -12,6 +12,24 @@ proteger_autenticacao();
     <title>Verificação - Coworking Digital</title>
     <link rel="stylesheet" href="../css/login.css">
     <style>
+        /* --- CORREÇÃO DO TAMANHO DA LOGO --- */
+        .logo-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 25px;
+            width: 100%;
+        }
+        .logo-box img, 
+        .logo-sistema-img {
+            max-width: 180px !important; 
+            max-height: 80px !important;
+            width: auto !important;
+            height: auto !important;
+            object-fit: contain;
+        }
+
+        /* Estilos originais da página */
         .input-codigo { width: 50px; height: 60px; border-radius: 12px; border: 1px solid #ddd; font-size: 24px; text-align: center; font-weight: bold; }
         .status-reenvio { margin-top: 20px; font-size: 0.9rem; color: #666; }
         .link-reenvio { color: #6A66FF; font-weight: bold; text-decoration: none; cursor: pointer; }

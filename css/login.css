@@ -146,9 +146,17 @@ body {
     margin-bottom: 5px;
 }
 
-.logo img {
-    width: 150px; /* Ajuste o tamanho do seu logo se for uma imagem real */
-    height: auto;
+/* CORREÇÃO GERAL DE LOGOS NO LOGIN */
+.logo img, 
+.logo-box img,
+.logo-sistema-img {
+    max-width: 180px;      /* Limite de largura para não estourar a lateral */
+    max-height: 100px;     /* Limite de altura para não empurrar o form */
+    width: auto;           /* Mantém a proporção */
+    height: auto;          /* Mantém a proporção */
+    object-fit: contain;   /* Garante que a imagem caiba no espaço sem cortar */
+    display: block;
+    margin: 0 auto;        /* Centraliza */
 }
 
 .logo h1 {
@@ -159,10 +167,15 @@ body {
     letter-spacing: 1px;
 }
 
-.logo-icon svg {
-    width: 80px;
-    height: 80px;
-    fill: var(--cor-primaria);
+/* --- CORREÇÃO DA LOGO NO RODAPÉ/PAINEL --- */
+.logo-box {
+    text-align: center;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 60px; /* Garante espaço mínimo */
 }
 
 /* Títulos e Textos */

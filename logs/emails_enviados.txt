@@ -3,3 +3,6 @@
 [FALHA NO ENVIO REAL - REQUER SMTP] [01/12/2025 04:18:01] Para: funcionarioo@teste.com | Código: 2449
 [FALHA NO ENVIO REAL - REQUER SMTP] [03/12/2025 06:44:29] Para: 202511240011@ifba.edu.br | Código: 8630
 [FALHA NO ENVIO REAL - REQUER SMTP] [03/12/2025 06:55:36] Para: 202511240018@ifba.edu.br | Código: 6379
+[FALHA NO ENVIO REAL - REQUER SMTP] [07/12/2025 23:08:22] Para: queteli@coworking.com | Código: 8796
+[FALHA NO ENVIO REAL - REQUER SMTP] [07/12/2025 23:41:43] Para: jhon@coworking.com | Código: 8437
+[FALHA NO ENVIO REAL - REQUER SMTP] [07/12/2025 23:47:36] Para: queteli@coworking.com | Código: 0820

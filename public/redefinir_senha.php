@@ -1,5 +1,5 @@
 <?php
-// /public/redefinir_senha.php
+// ARQUIVO: public/redefinir_senha.php
 require_once __DIR__ . '/../includes/seguranca.php';
 require_once __DIR__ . '/../includes/ui_auxiliar.php';
 proteger_autenticacao();
@@ -11,6 +11,24 @@ proteger_autenticacao();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Criar Nova Senha</title>
     <link rel="stylesheet" href="../css/login.css">
+    <style>
+        /* --- CORREÇÃO DA LOGO --- */
+        .logo-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 25px;
+            width: 100%;
+        }
+        .logo-box img, 
+        .logo-sistema-img {
+            max-width: 180px !important;
+            max-height: 80px !important;
+            width: auto !important;
+            height: auto !important;
+            object-fit: contain;
+        }
+    </style>
 </head>
 <body>
     <div class="container">

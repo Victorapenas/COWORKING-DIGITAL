@@ -57,7 +57,7 @@ $listaEquipes = listarEquipes($empresaId);
                         <div class="empty-state-icon">📂</div>
                         <p>Nenhum projeto ativo. Crie o primeiro agora!</p>
                     </div>
-                <?php else: foreach ($projetosAtivos as $p): echo renderizarCardProjeto($p); endforeach; endif; ?>
+                <?php else: foreach ($projetosAtivos as $p): echo renderizarCardProjeto($p, $is_socio); endforeach; endif; ?>
             </div>
         </div>
 
@@ -65,7 +65,7 @@ $listaEquipes = listarEquipes($empresaId);
             <div class="grid-layout">
                 <?php if (empty($projetosArquivados)): ?>
                     <p style="color:#aaa; padding:20px; grid-column: 1/-1; text-align: center;">Lixeira vazia.</p>
-                <?php else: foreach ($projetosArquivados as $p): echo renderizarCardProjeto($p); endforeach; endif; ?>
+                <?php else: foreach ($projetosArquivados as $p): echo renderizarCardProjeto($p, $is_socio); endforeach; endif; ?>
             </div>
         </div>
     </div>
@@ -247,7 +247,7 @@ $listaEquipes = listarEquipes($empresaId);
 </html>
 
 <?php
-function renderizarCardProjeto($p) {
+function renderizarCardProjeto($p, $is_socio) {
     // Labels de Equipe
     $teamsArr = [];
     if (!empty($p['equipes']) && is_array($p['equipes'])) {
@@ -267,8 +267,10 @@ function renderizarCardProjeto($p) {
     $botoes = '<a href="projeto_detalhes.php?id='.$p['id'].'" class="btn-round view" title="Ver Detalhes">'.getIcone('olho').'</a>';
     
     if ($p['ativo'] == 1) {
-        $botoes .= '<button onclick="event.stopPropagation(); abrirModalEditarProjeto('.$jsonProjeto.')" class="btn-round edit" title="Editar">'.getIcone('editar').'</button>';
-        $botoes .= '<button onclick="event.stopPropagation(); abrirModalAcao('.$p['id'].', \''.addslashes($p['nome']).'\', \'active_context\')" class="btn-round delete" title="Arquivar">'.getIcone('lixo').'</button>';
+        if ($is_socio){
+            $botoes .= '<button onclick="event.stopPropagation(); abrirModalEditarProjeto('.$jsonProjeto.')" class="btn-round edit" title="Editar">'.getIcone('editar').'</button>';
+            $botoes .= '<button onclick="event.stopPropagation(); abrirModalAcao('.$p['id'].', \''.addslashes($p['nome']).'\', \'active_context\')" class="btn-round delete" title="Arquivar">'.getIcone('lixo').'</button>';
+        }
     } else {
         $botoes .= '<button onclick="event.stopPropagation(); confirmarAcaoProjeto('.$p['id'].', \'restore\')" class="btn-round restore" title="Restaurar">'.getIcone('restaurar').'</button>';
         $botoes .= '<button onclick="event.stopPropagation(); confirmarAcaoProjeto('.$p['id'].', \'hard\')" class="btn-round delete" title="Excluir">'.getIcone('lixo').'</button>';

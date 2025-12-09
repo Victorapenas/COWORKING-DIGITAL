@@ -143,7 +143,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                 </div>
             </div>
             <div style="text-align:right; display:flex; align-items:center; gap:20px;">
-                <?php if ($pode_editar): ?>
+                <?php if ($is_socio): ?>
                     <button onclick='abrirModalEditarProjeto(<?= $projJson ?>)' class="botao-primario" style="padding: 10px 20px; display:flex; align-items:center; gap:8px;">
                         <?= getIcone('editar') ?> Editar Projeto
                     </button>
@@ -182,7 +182,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                             <span><?= getIcone('task') ?> Cronograma de Atividades</span>
                             <?php if ($pode_editar): ?>
                                 <button class="botao-primario" onclick="openTarefaModal(<?php echo $id; ?>, null);" style="padding: 5px 15px; font-size: 0.85rem;">
-                                    <?= getIcone('adicionar'); ?> + Nova Tarefa
+                                    <?= getIcone('adicionar'); ?>Nova Tarefa
                                 </button>
                             <?php endif; ?>
                         </div>

@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (resultado.ok) {
                 // --- AQUI ESTÁ A MUDANÇA: Vai para equipes.php ---
-                window.location.href = 'equipes.php';
+                window.location.href = 'dashboard.php';
             } else if (resultado.primeiro_acesso) {
                 sessionStorage.setItem('recuperacao_email', resultado.email);
                 alert(resultado.mensagem);

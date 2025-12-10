@@ -552,6 +552,7 @@ input[type="file"]:hover { background: #e3f2fd !important; }
     font-weight: 700;
     color: var(--text-main);
     margin: 0;
+    margin-left: 10px;
 }
 
 .team-desc {
@@ -559,6 +560,7 @@ input[type="file"]:hover { background: #e3f2fd !important; }
     font-size: 0.85rem;
     color: var(--text-sec);
     margin-top: 4px;
+    margin-left: 10px;
 }
 
 /* Card do Membro (Estrutura) */

@@ -55,7 +55,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
         .tab-content { display: none; padding: 30px; max-width: 1400px; margin: 0 auto; }
         .tab-content.active { display: block; }
         .grid-overview { display: grid; grid-template-columns: 2.5fr 1fr; gap: 30px; width: 100%; }
-        .full-layout { width: 100%; }
+        .full-layout { width: 95%; }
         
         .war-room-header { background: white; padding: 25px 30px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .header-title h1 { margin: 0; font-size: 1.8rem; color: #2c3e50; font-weight: 800; }
@@ -144,7 +144,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
             </div>
             <div style="text-align:right; display:flex; align-items:center; gap:20px;">
                 <?php if ($is_socio): ?>
-                    <button onclick='abrirModalEditarProjeto(<?= $projJson ?>)' class="botao-primario" style="padding: 10px 20px; display:flex; align-items:center; gap:8px;">
+                    <button onclick="abrirModalEditarProjeto(<?= $projJson ?>, 'info', 'editar')" class="botao-primario" style="padding: 10px 20px; display:flex; align-items:center; gap:8px;">
                         <?= getIcone('editar') ?> Editar Projeto
                     </button>
                 <?php endif; ?>
@@ -249,7 +249,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
             <div class="content-box">
                 <div class="box-title">
                     <span><?= getIcone('users') ?> Membros Envolvidos & Desempenho</span>
-                    <?php if ($pode_editar): ?>
+                    <?php if ($is_socio): ?>
                         <button class="botao-secundario" onclick="abrirModalEditarProjeto(<?= $projJson ?>)" style="padding:5px 15px; font-size:0.85rem;">+ Adicionar Equipe</button>
                     <?php endif; ?>
                 </div>
@@ -283,7 +283,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                 <div class="box-title">
                     <span><?= getIcone('pasta') ?> Arquivos e Links Públicos</span>
                     <?php if ($pode_editar): ?>
-                        <button class="botao-secundario" onclick="abrirModalEditarProjeto(<?= $projJson ?>)" style="padding:5px 15px; font-size:0.85rem;">+ Adicionar Arquivos</button>
+                        <button class="botao-secundario" onclick="abrirModalEditarProjeto(<?= $projJson ?>, 'anexos', 'adicionar_arquivos')" style="padding:5px 15px; font-size:0.85rem;">+ Adicionar Arquivos</button>
                     <?php endif; ?>
                 </div>
                 
@@ -314,7 +314,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
             <div class="content-box" style="border-color:#ffcdd2;">
                 <div class="box-title" style="color:#c62828;">
                     <span><?= getIcone('cadeado') ?> Área Restrita (Confidencial)</span>
-                    <button class="botao-secundario" onclick="abrirModalEditarProjeto(<?= $projJson ?>)" style="padding:5px 15px; font-size:0.85rem; border-color:#ffcdd2; color:#c62828;">+ Adicionar Confidencial</button>
+                    <button class="botao-secundario" onclick="abrirModalEditarProjeto(<?= $projJson ?>, 'privado', 'adicionar_arquivos')" style="padding:5px 15px; font-size:0.85rem; border-color:#ffcdd2; color:#c62828;">+ Adicionar Confidencial</button>
                 </div>
                 
                 <div class="file-grid">
@@ -344,7 +344,9 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
         <div class="modal-content" style="width: 700px;">
             <h3 id="modalTitle">Editar Projeto</h3>
             <div class="modal-tabs">
-                <div class="modal-tab active" onclick="switchFormTab('info', this)">Informações & Equipe</div>
+                <?php if ($is_socio): ?>
+                    <div class="modal-tab active" onclick="switchFormTab('info', this)">Informações & Equipe</div>
+                <?php endif; ?>
                 <div class="modal-tab" onclick="switchFormTab('anexos', this)">Anexos e Links</div>
                 <?php if ($is_socio): ?>
                 <div class="modal-tab" onclick="switchFormTab('privado', this)" style="color:#6A66FF;"><?= getIcone('cadeado') ?> Área do Sócio</div>
@@ -353,47 +355,48 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
 
             <form id="formCriarProjeto" enctype="multipart/form-data">
                 <input type="hidden" name="id" id="projId"> 
-                
-                <div id="tab-info" class="tab-panel active">
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                        <div class="form-group"><label>Nome do Projeto</label><input type="text" name="nome" id="projNome" required></div>
-                        <div class="form-group"><label>Cliente</label><input type="text" name="cliente" id="projCliente"></div>
-                        <div class="form-group"><label>Início</label><input type="date" name="data_inicio" id="projInicio"></div>
-                        <div class="form-group"><label>Previsão Fim</label><input type="date" name="data_fim" id="projFim"></div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Status Atual</label>
-                        <select name="status" id="projStatus" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
-                            <option value="PLANEJADO">Planejado</option>
-                            <option value="EM_ANDAMENTO">Em Andamento</option>
-                            <option value="CONCLUIDO">Concluído</option>
-                            <option value="CANCELADO">Cancelado</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Equipes Envolvidas</label>
-                        <div class="custom-select-wrapper">
-                            <div class="custom-select">
-                                <div class="custom-select__trigger" id="equipeTrigger">
-                                    <span id="equipeTriggerText">Selecione as equipes...</span>
-                                    <div class="arrow"></div>
-                                </div>
-                                <div class="custom-options">
-                                    <?php foreach ($listaEquipes as $eq): ?>
-                                        <span class="custom-option" data-value="<?= $eq['id'] ?>">
-                                            <?= htmlspecialchars($eq['nome']) ?>
-                                        </span>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
-                            <div id="hiddenEquipesInputs"></div>
+                <?php if($is_socio): ?>
+                    <div id="tab-info" class="tab-panel active">
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                            <div class="form-group"><label>Nome do Projeto</label><input type="text" name="nome" id="projNome" required></div>
+                            <div class="form-group"><label>Cliente</label><input type="text" name="cliente" id="projCliente"></div>
+                            <div class="form-group"><label>Início</label><input type="date" name="data_inicio" id="projInicio"></div>
+                            <div class="form-group"><label>Previsão Fim</label><input type="date" name="data_fim" id="projFim"></div>
                         </div>
-                    </div>
+                        
+                        <div class="form-group">
+                            <label>Status Atual</label>
+                            <select name="status" id="projStatus" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                                <option value="PLANEJADO">Planejado</option>
+                                <option value="EM_ANDAMENTO">Em Andamento</option>
+                                <option value="CONCLUIDO">Concluído</option>
+                                <option value="CANCELADO">Cancelado</option>
+                            </select>
+                        </div>
 
-                    <div class="form-group"><label>Descrição</label><textarea name="descricao" id="projDesc" rows="3" style="width:100%; border:1px solid #ddd; border-radius:8px; padding:10px;"></textarea></div>
-                </div>
+                        <div class="form-group">
+                            <label>Equipes Envolvidas</label>
+                            <div class="custom-select-wrapper">
+                                <div class="custom-select">
+                                    <div class="custom-select__trigger" id="equipeTrigger">
+                                        <span id="equipeTriggerText">Selecione as equipes...</span>
+                                        <div class="arrow"></div>
+                                    </div>
+                                    <div class="custom-options">
+                                        <?php foreach ($listaEquipes as $eq): ?>
+                                            <span class="custom-option" data-value="<?= $eq['id'] ?>">
+                                                <?= htmlspecialchars($eq['nome']) ?>
+                                            </span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                                <div id="hiddenEquipesInputs"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group"><label>Descrição</label><textarea name="descricao" id="projDesc" rows="3" style="width:100%; border:1px solid #ddd; border-radius:8px; padding:10px;"></textarea></div>
+                    </div>
+                <?php endif; ?>
 
                 <div id="tab-anexos" class="tab-panel">
                     <div class="form-group">

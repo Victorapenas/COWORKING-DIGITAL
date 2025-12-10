@@ -40,7 +40,7 @@ $listaEquipes = listarEquipes($empresaId);
                 <h1 style="font-size: 2rem; color: #2c3e50; font-weight:800; margin:0;">Projetos</h1>
                 <p style="color: #7f8c8d; margin-top:5px;">Gerencie o ciclo de vida, arquivos e entregas.</p>
             </div>
-            <?php if ($pode_editar): ?>
+            <?php if ($is_socio): ?>
                 <button class="botao-primario" onclick="openModal()">+ Novo Projeto</button>
             <?php endif; ?>
         </div>

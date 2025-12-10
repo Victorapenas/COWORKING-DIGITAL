@@ -60,11 +60,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- FUNÇÃO PARA ABRIR MODAL DE EDIÇÃO ---
-    window.abrirModalEditarProjeto = function(proj) {
+    // Adicionado parâmetro opcional abaInicial e tituloContexto
+    window.abrirModalEditarProjeto = function(proj, abaInicial = 'info', tituloContexto = 'editar') {
         if (modalProjeto) {
             modalProjeto.style.display = 'flex';
             const title = document.getElementById('modalTitle');
-            if(title) title.innerText = "Editar Projeto";
+            
+            // Define o título do modal com base no contexto
+            if (title) {
+                if (tituloContexto === 'adicionar_arquivos') {
+                    title.innerText = "Adicionar Arquivos/Links";
+                } else {
+                    title.innerText = "Editar Projeto";
+                }
+            }
             
             // Preencher Campos
             const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
@@ -122,8 +131,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            const firstTab = document.querySelector('.modal-tab');
-            if(firstTab) switchFormTab('info', firstTab);
+            // Selecionar a aba inicial
+            const targetTabElement = document.querySelector(`#modalProjeto .modal-tab[onclick*="switchFormTab('${abaInicial}'"]`);
+            if (targetTabElement) {
+                // Chama a função global definida em projeto_detalhes.php
+                switchFormTab(abaInicial, targetTabElement); 
+            } else {
+                // Fallback para a primeira aba (info)
+                const firstTab = document.querySelector('.modal-tab');
+                if(firstTab) switchFormTab('info', firstTab);
+            }
         }
     }
 
@@ -190,14 +207,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const view = document.getElementById('view-'+tab);
         if(view) view.style.display = 'block';
         document.querySelectorAll('.tabs-header .tab-btn').forEach(b => b.classList.remove('active'));
-        if(btn) btn.classList.add('active');
-    }
-
-    window.switchFormTab = function(tab, btn) {
-        document.querySelectorAll('#formCriarProjeto .tab-panel').forEach(p => p.classList.remove('active'));
-        const target = document.getElementById('tab-'+tab);
-        if(target) target.classList.add('active');
-        document.querySelectorAll('#formCriarProjeto .modal-tab').forEach(b => b.classList.remove('active'));
         if(btn) btn.classList.add('active');
     }
 

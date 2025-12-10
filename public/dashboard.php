@@ -2,7 +2,16 @@
 // ARQUIVO: public/dashboard.php
 require_once __DIR__ . '/../includes/seguranca.php';
 require_once __DIR__ . '/../includes/ui_auxiliar.php';
+require_once __DIR__ . '/../includes/funcoes.php';
 proteger_pagina();
+
+$usuario = $_SESSION[SESSAO_USUARIO_KEY];
+$empresaId = getEmpresaIdLogado($usuario);
+
+$papel = $usuario['papel'];
+$is_socio = in_array($papel, ['DONO', 'LIDER']);
+$pode_editar = in_array($papel, ['DONO', 'LIDER', 'GESTOR']);
+
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -81,13 +90,15 @@ proteger_pagina();
             </div>
 
             <div id="quickActions" class="quick-actions" style="display:none;">
-                <div class="action-btn" onclick="openModal()">
-                    <?= getIcone('adicionar') ?> Novo Projeto
-                </div>
+                <?php if ($is_socio): ?>
+                    <div class="action-btn" onclick="openModal()">
+                        <?= getIcone('adicionar') ?> Novo Projeto
+                    </div>
+                <?php endif;?>
                 <div class="action-btn" onclick="window.location.href='equipes.php'">
                     <?= getIcone('users') ?> Gerenciar Equipe
                 </div>
-                <div class="action-btn" onclick="openTarefaModal(null, null)">
+                <div class="action-btn" onclick="window.location.href='minhas_tarefas.php'">
                     <?= getIcone('task') ?> Criar Tarefa
                 </div>
             </div>

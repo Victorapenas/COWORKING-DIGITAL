@@ -226,8 +226,10 @@ $pode_editar = ($is_dono || $papel === 'GESTOR');
                     <div class="form-group">
                         <label>Nível de Acesso</label>
                         <div class="radio-group" style="flex-wrap:wrap;">
-                            <label id="lblSocio" style="display:none; color:#6A66FF; font-weight:bold;"><input type="radio" name="nivel_acesso" value="DONO"> Sócio/Dono</label>
-                            <label><input type="radio" name="nivel_acesso" value="GESTOR"> Gestor</label>
+                            <?php if ($is_dono): ?>
+                                <label id="lblSocio" style="display:none; color:#6A66FF; font-weight:bold;"><input type="radio" name="nivel_acesso" value="DONO"> Sócio/Dono</label>
+                                <label><input type="radio" name="nivel_acesso" value="GESTOR"> Gestor</label>
+                            <?php endif; ?>
                             <label><input type="radio" name="nivel_acesso" value="FUNCIONARIO" checked> Colaborador</label>
                         </div>
                     </div>

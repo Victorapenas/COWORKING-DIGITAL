@@ -127,7 +127,7 @@ $listaEquipes = listarEquipes($empresaId);
             </div>
             
             <?php if($isManager): ?>
-                <button class="botao-primario" onclick="openTarefaModal(null, null)" style="padding:12px 25px; background: #4318FF;">
+                <button class="botao-primario" onclick="window.location.href = 'projetos.php'" style="padding:12px 25px; background: #4318FF;">
                     <?= getIcone('adicionar') ?> Nova Atividade
                 </button>
             <?php endif; ?>

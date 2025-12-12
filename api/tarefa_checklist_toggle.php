@@ -1,5 +1,8 @@
 <?php
+<<<<<<< HEAD
 //atualização
+=======
+>>>>>>> 3913ec0 (.)
 // ARQUIVO: api/tarefa_checklist_toggle.php
 ob_start();
 header("Content-Type: application/json; charset=UTF-8");

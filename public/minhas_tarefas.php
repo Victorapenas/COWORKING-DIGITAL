@@ -218,29 +218,43 @@ $listaEquipes = listarEquipes($empresaId);
                 <h3 id="execTitulo" style="margin:0; color:#2c3e50;">Detalhes da Atividade</h3>
                 <span id="execBadge" class="st-badge">STATUS</span>
             </div>
+            
             <form id="formEntrega" enctype="multipart/form-data">
                 <input type="hidden" name="tarefa_id" id="execId">
+                
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px;">
                     <div>
-                        <h4 style="color:#666; font-size:0.9rem; margin-bottom:10px;">Descrição</h4>
-                        <div id="execDesc" style="background:#f8f9fa; padding:15px; border-radius:8px; font-size:0.9rem; color:#444; min-height:100px; margin-bottom:20px; border:1px solid #eee;"></div>
-                        <div class="form-group">
-                            <label>Progresso Real</label>
+                        <h4 style="color:#666; font-size:0.9rem; margin-bottom:10px;">Descrição da Atividade</h4>
+                        <div id="execDesc" style="background:#f8f9fa; padding:15px; border-radius:8px; font-size:0.9rem; color:#444; min-height:60px; margin-bottom:20px; border:1px solid #eee;"></div>
+                        
+                        <div id="execChecklistArea" style="margin-bottom: 20px; display:none;">
+                            <h4 style="color:#2b3674; font-size:0.9rem; margin-bottom:10px; display:flex; justify-content:space-between;">
+                                Checklist de Etapas
+                                <span id="execProgressoTexto" style="color:#0d6efd; font-weight:bold;">0%</span>
+                            </h4>
+                            <div id="listaChecklistColab" style="background:white; border:1px solid #eee; border-radius:10px; overflow:hidden;">
+                                </div>
+                        </div>
+
+                        <div class="form-group" id="groupProgressoManual">
+                            <label>Progresso Manual</label>
                             <div style="display:flex; align-items:center; gap:10px;">
                                 <input type="range" name="progresso" id="execProgresso" min="0" max="100" oninput="document.getElementById('lblProg').innerText = this.value + '%'">
                                 <span id="lblProg" style="font-weight:bold; color:#0d6efd; width:40px;">0%</span>
                             </div>
                         </div>
+
                         <div class="form-group">
-                            <label>Mover para</label>
+                            <label>Alterar Status</label>
                             <select name="status" id="execStatus" class="campo-padrao">
                                 <option value="PENDENTE">A Fazer</option>
                                 <option value="EM_ANDAMENTO">Em Execução</option>
-                                <option value="EM_REVISAO">Revisão</option>
+                                <option value="EM_REVISAO">Entregar (Revisão)</option>
                                 <option value="CONCLUIDA">Concluído</option>
                             </select>
                         </div>
                     </div>
+
                     <div>
                         <label>Entrega / Arquivos</label>
                         <div class="upload-area" onclick="document.getElementById('fileInput').click()" style="border: 2px dashed #e0e0e0; padding: 20px; text-align: center; border-radius: 10px; cursor: pointer; background: #fafafa; margin-bottom: 15px;">
@@ -300,7 +314,9 @@ $listaEquipes = listarEquipes($empresaId);
 
 <?php
 function renderCard($t, $podeEditar) {
+    // Garante que o objeto PHP vire um JSON válido para o JS
     $json = htmlspecialchars(json_encode($t), ENT_QUOTES, 'UTF-8');
+    
     $prazoTxt = $t['prazo'] ? date('d/m/Y', strtotime($t['prazo'])) : 'S/ Data';
     $criadoEm = date('d/m/Y', strtotime($t['criado_em']));
     $isAtrasada = ($t['status']!='CONCLUIDA' && $t['prazo'] && strtotime($t['prazo']) < time());
@@ -318,6 +334,7 @@ function renderCard($t, $podeEditar) {
     $iniciais = strtoupper(substr($t['responsavel_nome'], 0, 2));
     
     // Ações: Se pode editar (Gestor) mostra Editar/Excluir. Senão, só "Ver Detalhes".
+    // A função abrirModalExecucao agora usará o JSON completo (incluindo checklist)
     $actions = '<button class="btn-act btn-view" onclick=\'abrirModalExecucao('.$json.')\'>Ver Detalhes</button>';
     
     if($podeEditar) {

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 07/12/2025 às 22:59
+-- Tempo de geração: 12/12/2025 às 10:10
 -- Versão do servidor: 10.4.32-MariaDB
 -- Versão do PHP: 8.2.12
 
@@ -148,7 +148,7 @@ CREATE TABLE `projeto` (
 --
 
 INSERT INTO `projeto` (`id`, `empresa_id`, `nome`, `cliente_nome`, `descricao`, `gestor_id`, `lider_id`, `status`, `criado_em`, `atualizado_em`, `links_externos`, `arquivos_privados`, `data_inicio`, `data_fim_prevista`, `data_fim`, `ativo`) VALUES
-(50, 1, 'Plataforma Coworking', 'IFBA', 'Sistema central de gestão de tarefas.', 102, 101, 'EM_ANDAMENTO', '2025-12-07 20:36:04', '2025-12-07 20:36:04', NULL, NULL, '2025-10-15', NULL, '2025-12-13', 1);
+(50, 1, 'Plataforma Coworking', 'IFBA', 'Sistema central de gestão de tarefas.', 102, 101, 'EM_ANDAMENTO', '2025-12-07 20:36:04', '2025-12-12 05:37:10', '[{\"titulo\":\"Barema PI 2025.2 (1).docx\",\"url\":\"uploads\\/projetos\\/doc_693ba9692d704.docx\",\"tipo\":\"arquivo\"},{\"titulo\":\"Video demonstrativo\",\"url\":\"https:\\/\\/youtu.be\\/V9PVRfjEBTI?si=Z_BO0PeXB3Gb6nZ7\",\"tipo\":\"link\"}]', '[]', '2025-10-15', NULL, '2025-12-13', 1);
 
 -- --------------------------------------------------------
 
@@ -166,6 +166,7 @@ CREATE TABLE `projeto_equipe` (
 --
 
 INSERT INTO `projeto_equipe` (`projeto_id`, `equipe_id`) VALUES
+(50, 10),
 (50, 11),
 (50, 12);
 
@@ -187,6 +188,8 @@ CREATE TABLE `tarefa` (
   `criador_id` int(11) NOT NULL,
   `responsavel_id` int(11) NOT NULL,
   `prazo` datetime DEFAULT NULL,
+  `arquivos_tarefa` text DEFAULT NULL,
+  `checklist` text DEFAULT NULL,
   `concluida_em` datetime DEFAULT NULL,
   `criado_em` timestamp NOT NULL DEFAULT current_timestamp(),
   `atualizado_em` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -196,10 +199,11 @@ CREATE TABLE `tarefa` (
 -- Despejando dados para a tabela `tarefa`
 --
 
-INSERT INTO `tarefa` (`id`, `empresa_id`, `projeto_id`, `titulo`, `descricao`, `prioridade`, `status`, `progresso`, `criador_id`, `responsavel_id`, `prazo`, `concluida_em`, `criado_em`, `atualizado_em`) VALUES
-(1, 1, 50, 'Backend: Login Seguro', 'Implementar Auth e Sessão.', 'URGENTE', 'CONCLUIDA', 100, 101, 101, '2025-12-10 23:59:00', '2025-12-07 18:57:27', '2025-12-07 20:36:04', '2025-12-07 21:57:27'),
-(2, 1, 50, 'Front-end: Dashboard', 'Criar gráficos e KPIs.', 'URGENTE', 'CONCLUIDA', 0, 101, 102, '2025-12-10 23:59:00', '2025-12-07 17:36:04', '2025-12-07 20:36:04', '2025-12-07 20:36:04'),
-(3, 1, 50, 'Docs: PDF Final', 'Escrever relatório técnico.', 'NORMAL', 'EM_ANDAMENTO', 0, 102, 104, '2025-12-12 18:00:00', NULL, '2025-12-07 20:36:04', '2025-12-07 20:36:04');
+INSERT INTO `tarefa` (`id`, `empresa_id`, `projeto_id`, `titulo`, `descricao`, `prioridade`, `status`, `progresso`, `criador_id`, `responsavel_id`, `prazo`, `arquivos_tarefa`, `checklist`, `concluida_em`, `criado_em`, `atualizado_em`) VALUES
+(1, 1, 50, 'Backend: Login Seguro', 'Implementar Auth e Sessão.', 'URGENTE', 'CONCLUIDA', 100, 101, 101, '2025-12-10 23:59:00', NULL, NULL, '2025-12-07 18:57:27', '2025-12-07 20:36:04', '2025-12-07 21:57:27'),
+(2, 1, 50, 'Front-end: Dashboard', 'Criar gráficos e KPIs.', 'URGENTE', 'CONCLUIDA', 0, 101, 102, '2025-12-10 23:59:00', NULL, NULL, '2025-12-07 17:36:04', '2025-12-07 20:36:04', '2025-12-07 20:36:04'),
+(3, 1, 50, 'Docs: PDF Final', 'Escrever relatório técnico.', 'NORMAL', 'EM_ANDAMENTO', 0, 102, 104, '2025-12-12 18:00:00', NULL, NULL, NULL, '2025-12-07 20:36:04', '2025-12-07 20:36:04'),
+(18, 1, 50, 'Tela Gestão: Atribuir atividades', 'sfsdfsad', 'IMPORTANTE', 'EM_ANDAMENTO', 0, 102, 102, '2025-12-12 23:59:59', NULL, '[{\"id\":1,\"descricao\":\"cscscsc\",\"concluido\":0},{\"id\":2,\"descricao\":\"Desenvolver Aba Checklist\",\"concluido\":0}]', NULL, '2025-12-12 08:45:09', '2025-12-12 08:49:41');
 
 -- --------------------------------------------------------
 
@@ -377,7 +381,7 @@ ALTER TABLE `projeto`
 -- AUTO_INCREMENT de tabela `tarefa`
 --
 ALTER TABLE `tarefa`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT de tabela `token_recuperacao_senha`

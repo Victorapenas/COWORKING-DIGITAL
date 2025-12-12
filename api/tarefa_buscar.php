@@ -18,8 +18,11 @@ try {
     
     $pdo = conectar_db();
     
-    // Seleciona os dados necessários para preencher o formulário de edição
-    $stmt = $pdo->prepare("SELECT id, projeto_id, responsavel_id, titulo, descricao, prioridade, prazo, status FROM tarefa WHERE id = ?");
+    // Seleciona os dados necessários, incluindo 'checklist'
+    $sql = "SELECT id, projeto_id, responsavel_id, titulo, descricao, prioridade, prazo, status, checklist
+        FROM tarefa WHERE id = ?";
+            
+    $stmt = $pdo->prepare($sql);
     $stmt->execute([$tarefaId]);
     $tarefa = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -27,11 +30,11 @@ try {
         throw new Exception("Tarefa não encontrada.");
     }
     
-    // Formata a data para o formato yyyy-mm-dd do input HTML (importante para o campo 'date')
+    // Formata a data para o formato yyyy-mm-dd do input HTML
     if ($tarefa['prazo']) {
         $tarefa['prazo'] = date('Y-m-d', strtotime($tarefa['prazo']));
     }
-
+    
     echo json_encode(['ok' => true, 'tarefa' => $tarefa]);
 
 } catch (Exception $e) {

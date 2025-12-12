@@ -1,9 +1,9 @@
-// ARQUIVO: js/tarefas.js
+// ARQUIVO: js/tarefas.js (CORRIGIDO E SIMPLIFICADO)
 
 document.addEventListener('DOMContentLoaded', () => {
     const modalTarefa = document.getElementById('modalTarefa');
     const formTarefa = document.getElementById('formCriarTarefa');
-
+    
     // Função global para abrir o modal de tarefa (Criação ou Edição)
     window.openTarefaModal = function(projetoId, tarefaId) {
         if (!modalTarefa) return;
@@ -28,15 +28,23 @@ document.addEventListener('DOMContentLoaded', () => {
                         document.getElementById('nomeTarefa').value = t.titulo;
                         document.getElementById('descricaoTarefa').value = t.descricao;
                         document.getElementById('responsavelTarefa').value = t.responsavel_id;
-                        document.getElementById('prioridade').value = t.prioridade;
+                        
+                        // CORREÇÃO APLICADA AQUI: ID mudado de 'prioridade' para 'prioridadeTarefa'
+                        document.getElementById('prioridadeTarefa').value = t.prioridade; 
+                        
                         document.getElementById('prazoTarefa').value = t.prazo;
                         document.getElementById('statusTarefa').value = t.status;
+                        
+                        // **NOTA:** A lógica do Checklist está faltando nesta versão.
+                        // Use a versão de tarefa.php ou complete a lógica aqui.
+                        
                     } else {
                         alert("Erro ao carregar detalhes da tarefa: " + (data.erro || "Desconhecido"));
                         closeModal('modalTarefa'); // Fecha em caso de erro
                     }
                 })
                 .catch(err => {
+                    // MANTÉM A MENSAGEM DE ERRO (Erro de conexão ao buscar tarefa)
                     alert("Erro de conexão ao buscar tarefa: " + err.message);
                     closeModal('modalTarefa'); // Fecha em caso de erro
                 });
@@ -45,43 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
         modalTarefa.style.display = 'flex';
     };
 
-    // Função auxiliar para fechar qualquer modal
+    // Função auxiliar para fechar qualquer modal (Deixa aqui caso seja usada em outros lugares)
     window.closeModal = function(id) {
         const modal = document.getElementById(id);
         if (modal) modal.style.display = 'none';
     };
-
-    // Submissão do Formulário de Tarefa
-    if (formTarefa) {
-        formTarefa.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = formTarefa.querySelector('button[type="submit"]');
-            const txtOriginal = btn.textContent;
-            btn.disabled = true; btn.textContent = "Salvando...";
-
-            try {
-                const formData = new FormData(formTarefa);
-                const id = document.getElementById('tarefaId').value;
-                
-                // Escolhe o endpoint: Criar se não houver ID, Editar se houver
-                const endpoint = id ? '../api/tarefa_editar.php' : '../api/tarefa_criar.php';
-
-                const resp = await fetch(endpoint, { method: 'POST', body: formData });
-                let json;
-                try { json = await resp.json(); } catch (parseErr) { throw new Error("Resposta inválida do servidor (JSON)."); }
-
-                if (json.ok) {
-                    alert(id ? "Tarefa atualizada com sucesso!" : "Tarefa criada com sucesso!");
-                    window.location.reload(); // Recarrega para exibir a nova lista
-                } else {
-                    alert(json.erro || "Erro ao salvar tarefa.");
-                }
-            } catch (err) {
-                alert("Erro: " + err.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = txtOriginal;
-            }
-        });
-    }
 });

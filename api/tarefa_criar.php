@@ -24,29 +24,35 @@ try {
     $responsavelId = (int)($_POST['responsavel_id'] ?? 0);
     $prioridade = $_POST['prioridade'] ?? 'NORMAL';
     $prazo = !empty($_POST['prazo']) ? $_POST['prazo'] : null;
-    $status = $_POST['status'] ?? 'A_FAZER';
+    $status = $_POST['status'] ?? 'A_FAZER'; 
     
     if (!$projetoId || empty($nome) || !$responsavelId) {
         throw new Exception("Dados obrigatórios incompletos.");
     }
     
     if ($prazo) {
-    // Adiciona a hora final do dia ao prazo
-    $prazo = $prazo . ' 23:59:59'; 
+        $prazo = $prazo . ' 23:59:59'; 
     }
 
-    // Insert SQL (SALVA NO BANCO)
+    // 1. Processa Checklist (Gera o JSON inicial)
+    // CRUCIAL: A função processarChecklist deve estar definida em funcoes.php
+    $checklistArray = processarChecklist(0, $_POST, $pdo);
+    $checklistJson = empty($checklistArray) ? NULL : json_encode($checklistArray, JSON_UNESCAPED_UNICODE);
+    
+    // 2. Insert SQL: Inclui apenas a coluna 'checklist'
     $sql = "INSERT INTO tarefa 
-                (projeto_id, empresa_id, criador_id, responsavel_id, prioridade, titulo, descricao, prazo, status, criado_em, atualizado_em)
+                (projeto_id, empresa_id, criador_id, responsavel_id, prioridade, titulo, descricao, prazo, status, checklist, criado_em, atualizado_em)
             VALUES 
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
             
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
-        $projetoId, $empresaId, $criadorId, $responsavelId, $prioridade, $nome, $descricao, $prazo, $status
+        $projetoId, $empresaId, $criadorId, $responsavelId, $prioridade, $nome, $descricao, $prazo, $status, $checklistJson
     ]);
 
-    echo json_encode(['ok' => true, 'mensagem' => 'Tarefa criada com sucesso!']);
+    $novaTarefaId = $pdo->lastInsertId(); 
+
+    echo json_encode(['ok' => true, 'mensagem' => 'Tarefa criada com sucesso!', 'id' => $novaTarefaId]);
 
 } catch (Exception $e) {
     http_response_code(400);

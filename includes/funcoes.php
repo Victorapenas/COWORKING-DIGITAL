@@ -369,4 +369,95 @@ function statusTarefaLabel(string $status): string {
         default: return 'DESCONHECIDO';
     }
 }
+
+/**
+ * Busca e deserializa o conteúdo JSON de uma coluna da tabela tarefa.
+ */
+function getTarefaData(int $tarefaId, string $column, PDO $pdo): array {
+    $stmt = $pdo->prepare("SELECT {$column} FROM tarefa WHERE id = ?");
+    $stmt->execute([$tarefaId]);
+    $result = $stmt->fetchColumn();
+    
+    if (empty($result)) {
+        return [];
+    }
+    
+    // Deserializa o JSON. Se falhar, retorna array vazio.
+    $data = json_decode($result, true);
+    return is_array($data) ? $data : [];
+}
+
+/**
+ * Serializa um array e salva na coluna TEXT da tabela tarefa.
+ */
+function updateTarefaData(int $tarefaId, string $column, array $data, PDO $pdo): bool {
+    // Codifica para JSON. Se o array estiver vazio, salva NULL.
+    $json = empty($data) ? NULL : json_encode($data, JSON_UNESCAPED_UNICODE);
+    
+    // Atualiza a coluna e a data de atualização
+    $stmt = $pdo->prepare("UPDATE tarefa SET {$column} = ?, atualizado_em = NOW() WHERE id = ?");
+    return $stmt->execute([$json, $tarefaId]);
+}
+
+
+// --------------------------------------------------------------------------------
+// FUNÇÕES CHECKLIST
+// --------------------------------------------------------------------------------
+
+/**
+ * Processa o checklist enviado pelo formulário, mescla com o existente (se for edição) e salva o novo JSON.
+ */
+function processarChecklist(int $tarefaId, array $postData, PDO $pdo): array {
+    $checklistIds = $postData['checklist_id'] ?? [];
+    $checklistDescricoes = $postData['checklist_descricao'] ?? [];
+    // O array de concluídos vem como índices onde a checkbox estava marcada.
+    $checklistConcluidosIndices = $postData['checklist_concluido'] ?? []; 
+    
+    $novoChecklist = [];
+    $proximoIdInterno = 1;
+
+    // Busca o maior ID interno existente para garantir que novos itens tenham IDs únicos dentro do JSON
+    if ($tarefaId > 0) {
+        $checklistExistente = getTarefaData($tarefaId, 'checklist', $pdo);
+        if (!empty($checklistExistente)) {
+            $maxId = max(array_column($checklistExistente, 'id'));
+            $proximoIdInterno = $maxId + 1;
+        }
+    }
+    
+    foreach ($checklistDescricoes as $indice => $descricao) {
+        $descricao = trim($descricao);
+        if ($descricao === '') continue; // Ignora campos vazios
+        
+        $id = (int)($checklistIds[$indice] ?? 0);
+        
+        // Verifica se o índice do array de descrição existe no array de concluídos
+        $concluido = isset($checklistConcluidosIndices[$indice]) ? 1 : 0; 
+        
+        if ($id === 0) {
+            $id = $proximoIdInterno++; // Novo item recebe um ID sequencial único
+        }
+
+        $novoChecklist[] = [
+            'id' => $id,
+            'descricao' => $descricao,
+            'concluido' => $concluido
+        ];
+    }
+    
+    if ($tarefaId > 0) {
+        // Salva no DB se for edição
+        updateTarefaData($tarefaId, 'checklist', $novoChecklist, $pdo);
+    }
+
+    return $novoChecklist;
+}
+
+/**
+ * Alias para buscar o checklist deserializado.
+ */
+function buscarChecklistPorTarefa(int $tarefaId, PDO $pdo): array {
+    return getTarefaData($tarefaId, 'checklist', $pdo);
+}
+
 ?>

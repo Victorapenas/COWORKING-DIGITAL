@@ -17,6 +17,9 @@ try {
     $status = $_POST['status'] ?? '';
     $progresso = isset($_POST['progresso']) ? (int)$_POST['progresso'] : -1;
     $comentario = trim($_POST['comentario'] ?? '');
+    
+    // NOVO: Recebe o tempo total gasto em minutos
+    $tempoGasto = isset($_POST['tempo_gasto']) ? (int)$_POST['tempo_gasto'] : -1;
 
     if (!$tarefaId) throw new Exception("Tarefa não identificada.");
 
@@ -52,7 +55,7 @@ try {
         }
     }
 
-    // 3. Atualiza Status e Progresso na Tarefa Principal
+    // 3. Atualiza Status, Progresso E TEMPO na Tarefa Principal
     $sqlUp = "UPDATE tarefa SET atualizado_em = NOW()";
     $paramsUp = [];
 
@@ -69,6 +72,12 @@ try {
     if ($progresso >= 0 && $status !== 'CONCLUIDA') {
         $sqlUp .= ", progresso = ?";
         $paramsUp[] = $progresso;
+    }
+
+    // NOVO: Atualiza o tempo total se foi enviado
+    if ($tempoGasto >= 0) {
+        $sqlUp .= ", tempo_total_minutos = ?";
+        $paramsUp[] = $tempoGasto;
     }
 
     $sqlUp .= " WHERE id = ?";

@@ -774,3 +774,58 @@ input[type="file"]:hover { background: #e3f2fd !important; }
     border-bottom: 2px solid #f0f0f0;
     padding-bottom: 8px;
 }
+/* ARQUIVO: css/painel.css - ADICIONAR NO FINAL */
+
+/* --- TEMA COLABORADOR (AZUL) --- */
+.sidebar.theme-blue {
+    background: var(--primary); /* Azul forte */
+    border-right: none;
+    color: white;
+}
+
+.sidebar.theme-blue .nav-title {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.sidebar.theme-blue .nav-item {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.sidebar.theme-blue .nav-item:hover,
+.sidebar.theme-blue .nav-item.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    box-shadow: none;
+}
+
+.sidebar.theme-blue .separator {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar.theme-blue .client-name-text,
+.sidebar.theme-blue .client-logo-wrapper {
+    color: white;
+    border-color: rgba(255,255,255,0.3);
+}
+
+/* Timer Flutuante (Estilo) */
+.timer-badge {
+    background: #ffebee;
+    color: #c62828;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    border: 1px solid #ffcdd2;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.timer-running {
+    animation: pulse 1s infinite;
+}
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}

@@ -8,15 +8,23 @@ require_once __DIR__ . '/funcoes.php';
 function renderizar_sidebar(){
     $paginaAtual = basename($_SERVER['PHP_SELF']);
     
+    // Verifica papel para aplicar tema azul e restrições
+    $sessao = $_SESSION[SESSAO_USUARIO_KEY] ?? [];
+    $papel = $sessao['papel'] ?? 'FUNCIONARIO';
+    
+    // Define se é colaborador (para aplicar tema e esconder menus)
+    $isColab = ($papel == 'FUNCIONARIO' || $papel == 'COLABORADOR');
+    $classeTema = $isColab ? 'theme-blue' : '';
+    
     // --- Lógica para buscar Logo e Nome do Cliente ---
     $logoClienteUrl = null;
     $nomeEmpresa = "Minha Empresa"; // Fallback padrão
     
-    if (isset($_SESSION[SESSAO_USUARIO_KEY]['empresa_id'])) {
+    if (isset($sessao['empresa_id'])) {
         try {
             $pdo = conectar_db();
             $stmt = $pdo->prepare("SELECT nome, logo_url FROM empresa WHERE id = ?");
-            $stmt->execute([$_SESSION[SESSAO_USUARIO_KEY]['empresa_id']]);
+            $stmt->execute([$sessao['empresa_id']]);
             $empresa = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($empresa) {
                 $nomeEmpresa = $empresa['nome'];
@@ -29,7 +37,7 @@ function renderizar_sidebar(){
     }
     ?>
     
-    <div class="sidebar">
+    <div class="sidebar <?= $classeTema ?>">
         
         <div class="sidebar-header">
             <div class="client-logo-wrapper">
@@ -51,15 +59,18 @@ function renderizar_sidebar(){
         </div>
 
         <div class="sidebar-menu-container">
-            <div class="nav-title">PRINCIPAL</div>
+            <div class="nav-title">MEU ESPAÇO</div>
 
             <a href="dashboard.php" class="nav-item <?= $paginaAtual == 'dashboard.php' ? 'active' : '' ?>">
-                <?= getIcone('arquivo') ?> Visão Geral
+                <?= getIcone('arquivo') ?> 
+                <?= $isColab ? 'Minha Mesa' : 'Visão Geral' ?>
             </a>
 
+            <?php if (!$isColab): ?>
             <a href="equipes.php" class="nav-item <?= $paginaAtual == 'equipes.php' ? 'active' : '' ?>">
                 <?= getIcone('users') ?> Gestão de Equipes
             </a>
+            <?php endif; ?>
 
             <a href="projetos.php" class="nav-item <?= (strpos($paginaAtual, 'projeto') !== false) ? 'active' : '' ?>">
                 <?= getIcone('pasta') ?> Projetos
@@ -73,17 +84,20 @@ function renderizar_sidebar(){
                 <?= getIcone('calendario') ?> Calendário
             </a>
 
+            <?php if (!$isColab): ?>
             <a href="relatorios.php" class="nav-item <?= $paginaAtual == 'relatorios.php' ? 'active' : '' ?>">
                 <?= getIcone('documento') ?> Relatórios
             </a>
-
+            <?php endif; ?>
 
             <div class="separator"></div>
             <div class="nav-title">SISTEMA</div>
 
+            <?php if (!$isColab): ?>
             <a href="configuracoes.php" class="nav-item <?= $paginaAtual == 'configuracoes.php' ? 'active' : '' ?>">
                 <?= getIcone('config') ?> Configurações
             </a>
+            <?php endif; ?>
 
             <a href="#" class="nav-item" onclick="logoutSistema()">
                 <?= getIcone('sair') ?> Sair

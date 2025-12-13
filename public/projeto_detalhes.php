@@ -34,9 +34,9 @@ if ($proj['data_fim']) {
     $diff = $hoje->diff($fim);
 
     if ($diff->invert) {
-        $prazoHtml = '<span style="color:#e74c3c; font-weight:bold;">Atrasado ' . ($diff->days+1) . ' dia(s)</span>';
-    } else {
         $prazoHtml = '<span style="color:#2ecc71; font-weight:bold;">' . ($diff->days+1) . ' dia(s) restantes</span>';
+    } else {
+        $prazoHtml = '<span style="color:#e74c3c; font-weight:bold;">Atrasado ' . ($diff->days+1) . ' dia(s)</span>';
     }
 }
 

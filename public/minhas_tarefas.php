@@ -213,12 +213,15 @@ $listaEquipes = listarEquipes($empresaId);
     <?php require_once 'tarefa.php'; ?>
     
     <div id="modalExecucao" class="modal">
-        <div class="modal-content" style="width: 700px;">
-            <span class="close-btn" onclick="closeModal('modalExecucao')">&times;</span>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h3 id="execTitulo" style="margin:0; color:#2c3e50;">Detalhes da Atividade</h3>
-                <span id="execBadge" class="st-badge">STATUS</span>
-            </div>
+    <div class="modal-content" style="width: 800px; max-width:95%;"> <span class="close-btn" onclick="closeModal('modalExecucao')">&times;</span>
+        
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
+            <div>
+                <h3 id="execTitulo" style="margin:0; color:#2c3e50; font-size:1.4rem;">Detalhes da Atividade</h3>
+                <div id="execCronograma" style="margin-top:10px;"></div> </div>
+            <span id="execBadge" class="st-badge" style="font-size:0.9rem; padding:8px 15px;">STATUS</span>
+        </div>
+        
             
             <form id="formEntrega" enctype="multipart/form-data">
                 <input type="hidden" name="tarefa_id" id="execId">

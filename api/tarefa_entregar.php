@@ -38,15 +38,16 @@ try {
     // 2. LÓGICA DE STATUS RESTRITA
     $novoStatus = $statusSolicitado;
 
-    // REGRA 1: Colaborador Tenta Concluir -> Vira "EM_REVISAO"
-    if (!$isGestor && $statusSolicitado === 'CONCLUIDA') {
-        $novoStatus = 'EM_REVISAO';
-        $progresso = 99; // Visualmente quase lá
+    // REGRA DE OURO: Colaborador não conclui direto. Vai para Revisão.
+    if (!$isGestor && ($statusSolicitado === 'CONCLUIDA' || $statusSolicitado === 'EM_REVISAO')) {
+        $novoStatus = 'EM_REVISAO'; 
+        // Opcional: Define progresso 99% para indicar que acabou a parte dele
+        $progresso = 99; 
     }
 
-    // REGRA 2: Apenas Gestor pode definir CONCLUIDA
+    // REGRA: Apenas Gestor/Líder define CONCLUIDA
     if ($statusSolicitado === 'CONCLUIDA' && !$isGestor) {
-        throw new Exception("Apenas gestores podem aprovar e concluir tarefas.");
+        throw new Exception("Apenas gestores podem aprovar a tarefa.");
     }
 
     // REGRA 3: Se Gestor devolve (Pendente/Andamento), pode salvar feedback

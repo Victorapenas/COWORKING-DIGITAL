@@ -1365,3 +1365,277 @@ input[type="file"]:hover {
     box-shadow: var(--shadow-card);
     border: 1px solid #f0f0f0;
 }
+/* Checklist Rico e Bonito */
+.checklist-rich-item {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+    border-left: 4px solid #e0e0e0;
+}
+
+.checklist-rich-item:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border-color: #ccc;
+    border-left-color: #6A66FF;
+}
+
+.checklist-rich-item.done {
+    opacity: 0.7;
+    background: #f9f9f9;
+    border-left-color: #05cd99;
+}
+
+.chk-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.chk-desc {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #333;
+    line-height: 1.4;
+}
+
+.checklist-rich-item.done .chk-desc {
+    text-decoration: line-through;
+    color: #888;
+}
+
+/* Ações (Botões pequenos e elegantes) */
+.chk-actions {
+    display: flex;
+    gap: 10px;
+    padding-left: 34px; /* Alinha com o texto, pulando o checkbox */
+}
+
+.btn-chk-action {
+    background: #f0f4ff;
+    border: 1px solid #dce4fa;
+    color: #436cf1;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-chk-action:hover {
+    background: #436cf1;
+    color: white;
+}
+
+/* Caixa de Evidência (Quando já tem arquivo/link) */
+.chk-evidence-box {
+    margin-left: 34px;
+    background: #e8f5e9;
+    border: 1px solid #c8e6c9;
+    padding: 8px 12px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #2e7d32;
+    min-width: 200px;
+}
+
+.chk-evidence-box.link {
+    background: #fff8e1;
+    border-color: #ffecb3;
+    color: #f57f17;
+}
+
+.chk-evidence-box a {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 250px;
+}
+
+.chk-evidence-box button {
+    background: none;
+    border: none;
+    color: #999;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 10px;
+    font-size: 1.1rem;
+}
+.chk-evidence-box button:hover { color: #d32f2f; }
+
+/* Custom Checkbox Redondo */
+.custom-chk {
+    display: block;
+    position: relative;
+    padding-left: 25px;
+    cursor: pointer;
+    user-select: none;
+}
+.custom-chk input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+.chk-checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 22px;
+    width: 22px;
+    background-color: #fff;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    transition: 0.2s;
+}
+.custom-chk:hover input ~ .chk-checkmark {
+    border-color: #6A66FF;
+}
+.custom-chk input:checked ~ .chk-checkmark {
+    background-color: #05cd99;
+    border-color: #05cd99;
+}
+.chk-checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+.custom-chk input:checked ~ .chk-checkmark:after {
+    display: block;
+}
+.custom-chk .chk-checkmark:after {
+    left: 7px;
+    top: 3px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+/* CSS PARA CHECKLIST AVANÇADO */
+.checklist-rich-item {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-left: 4px solid #ccc;
+}
+.checklist-rich-item.done {
+    border-left-color: #05cd99;
+    background: #fdfdfd;
+}
+
+.chk-info {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.chk-index {
+    background: #eee;
+    color: #555;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+.chk-texts {
+    display: flex;
+    flex-direction: column;
+}
+.chk-desc {
+    font-weight: 600;
+    color: #333;
+}
+.chk-type-badge {
+    font-size: 0.65rem;
+    background: #e3f2fd;
+    color: #0d6efd;
+    padding: 2px 6px;
+    border-radius: 4px;
+    width: fit-content;
+    text-transform: uppercase;
+}
+
+/* Áreas de Ação */
+.btn-upload-req {
+    background: #f4f7fe;
+    border: 1px dashed #4318FF;
+    color: #4318FF;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: block;
+    text-align: center;
+    transition: 0.2s;
+}
+.btn-upload-req:hover {
+    background: #4318FF;
+    color: white;
+}
+
+.chk-link-box {
+    display: flex;
+    gap: 5px;
+}
+.input-link-req {
+    flex: 1;
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.btn-save-link {
+    background: #2b3674;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0 10px;
+    cursor: pointer;
+}
+
+.chk-done-box {
+    background: #e8f5e9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.link-evidencia {
+    text-decoration: none;
+    color: #2e7d32;
+    font-weight: 600;
+    font-size: 0.9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.btn-remove-evidencia {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+.btn-remove-evidencia:hover { color: #d32f2f; }

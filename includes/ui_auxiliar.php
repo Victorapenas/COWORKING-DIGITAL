@@ -13,9 +13,17 @@ function renderizar_sidebar()
     $sessao = $_SESSION[SESSAO_USUARIO_KEY] ?? [];
     $papel = $sessao['papel'] ?? 'FUNCIONARIO';
     
-    // Define se é colaborador (para aplicar tema e esconder menus)
+    // Define se é colaborador (para aplicar tema azul)
     $isColab = ($papel == 'FUNCIONARIO' || $papel == 'COLABORADOR');
-    $classeTema = $isColab ? 'theme-blue' : '';
+    
+    // Define classes CSS dinâmicas
+    $classesSidebar = 'sidebar';
+    if ($isColab) {
+        $classesSidebar .= ' theme-blue';
+    }
+    if ($papel === 'GESTOR') {
+        $classesSidebar .= ' sidebar-gestor';
+    }
     
     // --- Lógica para buscar Logo e Nome do Cliente ---
     $logoClienteUrl = null;
@@ -34,20 +42,11 @@ function renderizar_sidebar()
                     $logoClienteUrl = '../public/' . $empresa['logo_url'];
                 }
             }
-        } catch (Exception $e) { /* Silêncio */
-        }
-    }
-    // --- Lógica de Classe Extra (GESTOR) ---
-    $classeExtra = '';
-    if (isset($_SESSION[SESSAO_USUARIO_KEY]['papel']) && $_SESSION[SESSAO_USUARIO_KEY]['papel'] === 'GESTOR') {
-        $classeExtra = 'sidebar-gestor';
+        } catch (Exception $e) { /* Silêncio */ }
     }
     ?>
     
-    <div class="sidebar <?= $classeTema ?>">
-        
-
-    <div class="sidebar <?= $classeExtra ?>">
+    <div class="<?= $classesSidebar ?>">
 
         <div class="sidebar-header">
             <div class="client-logo-wrapper">
@@ -120,23 +119,19 @@ function renderizar_sidebar()
             $nomeUsuarioFooter = htmlspecialchars($_SESSION[SESSAO_USUARIO_KEY]['nome'] ?? 'Usuário');
             ?>
             <div style="
-                background: #f8f9fa; 
+                background: rgba(255,255,255,0.5); 
                 padding: 12px 15px; 
                 border-radius: 12px; 
-                border: 1px solid #eef0f7;
-                color: #2b3674; 
+                border: 1px solid rgba(0,0,0,0.05);
+                color: inherit; 
                 font-weight: 700; 
                 font-size: 0.9rem;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 gap: 8px;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.02);
             ">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"
-                    style="color: #0d6efd;">
-                    <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-                </svg>
+                <div style="width: 10px; height: 10px; background: #2ecc71; border-radius: 50%;"></div>
                 <?= $nomeUsuarioFooter ?>
             </div>
         </div>
@@ -145,7 +140,6 @@ function renderizar_sidebar()
     <script>
         function logoutSistema() {
             if (confirm('Deseja realmente sair do sistema?')) {
-                // Efeito visual de carregamento
                 document.body.style.cursor = 'wait';
                 fetch('../api/logout.php', { method: 'POST' })
                     .then(() => window.location.href = 'login.php')
@@ -157,12 +151,12 @@ function renderizar_sidebar()
 }
 
 // =============================================================================
-// OUTRAS FUNÇÕES DE UI (PAINEL LOGIN, HEADER, ETC)
+// OUTRAS FUNÇÕES DE UI
 // =============================================================================
 
 function renderizar_painel_info()
 {
-    // Ícones decorativos para a lateral do login
+    // Ícones decorativos em SVG direto para evitar dependência de arquivos externos
     $icones = [
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>',
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V8h12v3z"/></svg>',
@@ -184,13 +178,15 @@ function renderizar_painel_info()
 
 function renderizar_logo()
 {
-    $logoSistema = '../imgs/logo coworking.png';
-    if (!file_exists(__DIR__ . '/../imgs/logo coworking.png')) {
-        $logoSistema = '../css/coworking_digital.svg';
+    // Usa a logo SVG se existir, senão usa uma imagem PNG
+    $logoSistema = '../css/coworking_digital.svg';
+    if (!file_exists(__DIR__ . '/../css/coworking_digital.svg') || filesize(__DIR__ . '/../css/coworking_digital.svg') < 10) {
+        // Fallback se o SVG estiver vazio ou não existir
+        $logoSistema = '../imgs/logo coworking.png';
     }
     ?>
     <div class="logo-box">
-        <img src="<?= $logoSistema ?>" alt="Coworking Digital" class="logo-sistema-img">
+        <img src="<?= $logoSistema ?>" alt="Coworking Digital" class="logo-sistema-img" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<h2 style=\'color:#6A66FF\'>Coworking</h2>')">
     </div>
     <?php
 }
@@ -202,7 +198,6 @@ function renderizar_topo_personalizado()
     ?>
     <div class="topbar">
         <div></div>
-
         <div class="profile">
             <div style="text-align:right; font-size:0.85rem; color:#666; margin-right:10px;">
                 Olá, <strong><?= $nomeUsuario ?></strong>

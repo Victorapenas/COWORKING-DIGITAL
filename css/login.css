@@ -224,7 +224,7 @@ body {
     border-color: var(--cor-primaria);
     box-shadow: 0 0 0 3px rgba(106, 102, 255, 0.2);
 }
-
+/*s*/
 .campo-form svg {
     position: absolute;
     left: 15px;

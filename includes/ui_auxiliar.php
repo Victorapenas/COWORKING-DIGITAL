@@ -1,24 +1,25 @@
 <?php
 // ARQUIVO: includes/ui_auxiliar.php
-require_once __DIR__ . '/funcoes.php'; 
+require_once __DIR__ . '/funcoes.php';
 
-function renderizar_sidebar(){
+function renderizar_sidebar()
+{
     $paginaAtual = basename($_SERVER['PHP_SELF']);
-    
+
     // --- CONTEXTO DO USUÁRIO ---
     $sessao = $_SESSION[SESSAO_USUARIO_KEY] ?? [];
     $papel = $sessao['papel'] ?? 'FUNCIONARIO';
-    
+
     // Define se é colaborador (para aplicar tema e esconder menus)
     $isColab = ($papel == 'FUNCIONARIO' || $papel == 'COLABORADOR');
-    
+
     // Aplica classe CSS 'theme-blue' se for colaborador
     $classeTema = $isColab ? 'theme-blue' : '';
-    
+
     // --- LOGO DA EMPRESA ---
     $logoClienteUrl = null;
     $nomeEmpresa = "Minha Empresa";
-    
+
     if (isset($sessao['empresa_id'])) {
         try {
             $pdo = conectar_db();
@@ -31,23 +32,25 @@ function renderizar_sidebar(){
                     $logoClienteUrl = '../public/' . $empresa['logo_url'];
                 }
             }
-        } catch (Exception $e) { /* Silêncio */ }
+        } catch (Exception $e) { /* Silêncio */
+        }
     }
     ?>
-    
+
     <div class="sidebar <?= $classeTema ?>">
-        
+
         <div class="sidebar-header">
             <div class="client-logo-wrapper">
-                <?php if ($logoClienteUrl): ?>
-                    <img src="<?= $logoClienteUrl ?>" alt="<?= htmlspecialchars($nomeEmpresa) ?>" class="client-logo-img">
-                <?php else: ?>
-                    <span style="color:#0d6efd; font-weight:800; font-size:1.8rem;">
-                        <?= strtoupper(substr($nomeEmpresa, 0, 1)) ?>
-                    </span>
-                <?php endif; ?>
+                <?php
+                // Sempre mostrar logo do sistema no topo (Preferência SVG/Icone)
+                $logoSysHeader = '../css/coworking_digital.svg';
+                if (!file_exists(__DIR__ . '/../css/coworking_digital.svg')) {
+                    $logoSysHeader = '../imgs/logo coworking.png';
+                }
+                ?>
+                <img src="<?= $logoSysHeader ?>" alt="Sistema Coworking" class="client-logo-img">
             </div>
-            
+
             <div class="client-name-text">
                 <?= htmlspecialchars($nomeEmpresa) ?>
             </div>
@@ -60,21 +63,22 @@ function renderizar_sidebar(){
             <div class="nav-title">MEU ESPAÇO</div>
 
             <a href="dashboard.php" class="nav-item <?= $paginaAtual == 'dashboard.php' ? 'active' : '' ?>">
-                <?= getIcone('arquivo') ?> 
+                <?= getIcone('arquivo') ?>
                 <?= $isColab ? 'Minha Mesa' : 'Visão Geral' ?>
             </a>
 
             <?php if (!$isColab): ?>
-            <a href="equipes.php" class="nav-item <?= $paginaAtual == 'equipes.php' ? 'active' : '' ?>">
-                <?= getIcone('users') ?> Gestão de Equipes
-            </a>
+                <a href="equipes.php" class="nav-item <?= $paginaAtual == 'equipes.php' ? 'active' : '' ?>">
+                    <?= getIcone('users') ?> Gestão de Equipes
+                </a>
             <?php endif; ?>
 
             <a href="projetos.php" class="nav-item <?= (strpos($paginaAtual, 'projeto') !== false) ? 'active' : '' ?>">
                 <?= getIcone('pasta') ?> Projetos
             </a>
 
-            <a href="minhas_tarefas.php" class="nav-item <?= (strpos($paginaAtual, 'tarefa') !== false && strpos($paginaAtual, 'projeto') === false) ? 'active' : '' ?>">
+            <a href="minhas_tarefas.php"
+                class="nav-item <?= (strpos($paginaAtual, 'tarefa') !== false && strpos($paginaAtual, 'projeto') === false) ? 'active' : '' ?>">
                 <?= getIcone('task') ?> Minhas Tarefas
             </a>
 
@@ -83,18 +87,18 @@ function renderizar_sidebar(){
             </a>
 
             <?php if (!$isColab): ?>
-            <a href="relatorios.php" class="nav-item <?= $paginaAtual == 'relatorios.php' ? 'active' : '' ?>">
-                <?= getIcone('documento') ?> Relatórios
-            </a>
+                <a href="relatorios.php" class="nav-item <?= $paginaAtual == 'relatorios.php' ? 'active' : '' ?>">
+                    <?= getIcone('documento') ?> Relatórios
+                </a>
             <?php endif; ?>
 
             <div class="separator"></div>
             <div class="nav-title">SISTEMA</div>
 
             <?php if (!$isColab): ?>
-            <a href="configuracoes.php" class="nav-item <?= $paginaAtual == 'configuracoes.php' ? 'active' : '' ?>">
-                <?= getIcone('config') ?> Configurações
-            </a>
+                <a href="configuracoes.php" class="nav-item <?= $paginaAtual == 'configuracoes.php' ? 'active' : '' ?>">
+                    <?= getIcone('config') ?> Configurações
+                </a>
             <?php endif; ?>
 
             <a href="#" class="nav-item" onclick="logoutSistema()">
@@ -102,20 +106,43 @@ function renderizar_sidebar(){
             </a>
         </div>
 
-        <div class="sidebar-footer">
-            <?php 
-                $logoSys = '../imgs/logo coworking.png';
-                if (!file_exists(__DIR__ . '/../imgs/logo coworking.png')) {
-                    $logoSys = '../css/coworking_digital.svg';
-                }
-            ?>
-            <img src="<?= $logoSys ?>" alt="Sistema Coworking" class="system-logo-img">
+        <div class="sidebar-footer" style="padding: 15px;">
+            <div style="
+                display: flex; 
+                align-items: center; 
+                gap: 10px; 
+                padding: 10px 15px; 
+                background: #f8f9fa; 
+                border-radius: 12px; 
+                border: 1px solid #eee;">
+
+                <div style="
+                    width: 32px; 
+                    height: 32px; 
+                    background: var(--primary); 
+                    color: white; 
+                    border-radius: 50%; 
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center;
+                    font-size: 0.9rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path
+                            d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z" />
+                    </svg>
+                </div>
+
+                <div
+                    style="font-weight: 700; color: var(--text-main); font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <?= htmlspecialchars($sessao['nome'] ?? 'Usuário') ?>
+                </div>
+            </div>
         </div>
 
     </div>
     <script>
         function logoutSistema() {
-            if(confirm('Deseja realmente sair do sistema?')) {
+            if (confirm('Deseja realmente sair do sistema?')) {
                 document.body.style.cursor = 'wait';
                 fetch('../api/logout.php', { method: 'POST' })
                     .then(() => window.location.href = 'login.php')
@@ -127,7 +154,8 @@ function renderizar_sidebar(){
 }
 
 
-function renderizar_painel_info() {
+function renderizar_painel_info()
+{
     $icones = [
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>',
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V8h12v3z"/></svg>',
@@ -147,8 +175,9 @@ function renderizar_painel_info() {
     <?php
 }
 
-function renderizar_logo() {
-    $logoSistema = '../imgs/logo coworking.png'; 
+function renderizar_logo()
+{
+    $logoSistema = '../imgs/logo coworking.png';
     if (!file_exists(__DIR__ . '/../imgs/logo coworking.png')) {
         $logoSistema = '../css/coworking_digital.svg';
     }
@@ -159,12 +188,13 @@ function renderizar_logo() {
     <?php
 }
 
-function renderizar_topo_personalizado() {
+function renderizar_topo_personalizado()
+{
     $nomeUsuario = htmlspecialchars($_SESSION[SESSAO_USUARIO_KEY]['nome'] ?? 'Usuário');
     $iniciais = strtoupper(substr($nomeUsuario, 0, 2));
     ?>
     <div class="topbar">
-        <div></div> 
+        <div></div>
 
         <div class="profile">
             <div style="text-align:right; font-size:0.85rem; color:#666; margin-right:10px;">

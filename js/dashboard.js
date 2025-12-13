@@ -48,73 +48,100 @@ async function carregarDashboard() {
 // =============================================================================
 
 function renderizarDashboardColab(data) {
-    // 1. Atualiza Contadores
-    const countEl = document.getElementById('countPendentes');
-    if(countEl) countEl.innerText = data.minhas_tarefas ? data.minhas_tarefas.length : 0;
-    
-    // Badge do Botão Flutuante
-    const fabBadge = document.getElementById('fabCount');
-    if(fabBadge) {
-        fabBadge.innerText = data.minhas_tarefas ? data.minhas_tarefas.length : 0;
-        // Se não tiver tarefas, esconde o badge ou muda a cor
-        fabBadge.style.display = (data.minhas_tarefas && data.minhas_tarefas.length > 0) ? 'flex' : 'none';
-    }
+    // 1. Atualiza Header
+    const userSpan = document.getElementById('userName');
+    if(userSpan) userSpan.innerText = data.usuario_nome;
 
-    // 2. Renderiza Lista de Foco (Tarefas Principais)
-    const listaFoco = document.getElementById('listaTarefasFoco');
-    if (listaFoco) {
-        if (!data.minhas_tarefas || data.minhas_tarefas.length === 0) {
-            listaFoco.innerHTML = `
-                <div style="text-align:center; padding:40px; color:#999; border:2px dashed #eee; border-radius:16px; background:#f9f9f9;">
-                    <div style="font-size:3rem; margin-bottom:10px;">☕</div>
-                    <h3 style="margin:0; color:#555;">Tudo limpo por aqui!</h3>
-                    <p>Você não tem tarefas pendentes no momento.</p>
-                </div>`;
+    // 2. Atualiza KPIs
+    const elPend = document.getElementById('kpiPendentes');
+    const elUrg = document.getElementById('kpiUrgentes');
+    const elConc = document.getElementById('kpiConcluidas');
+    const elMeta = document.getElementById('kpiMetaMes');
+    const elProd = document.getElementById('kpiProd');
+
+    // Filtros de contagem
+    const pendentes = data.minhas_tarefas.length;
+    const urgentes = data.minhas_tarefas.filter(t => t.prioridade === 'URGENTE').length;
+    
+    // KPI de Entregues vem do array kpis da API
+    const entreguesObj = data.kpis.find(k => k.icone === 'check');
+    const entregues = entreguesObj ? entreguesObj.valor : 0;
+    
+    if(elPend) elPend.innerText = pendentes;
+    if(elUrg) elUrg.innerText = urgentes;
+    if(elConc) elConc.innerText = entregues;
+    if(elMeta) elMeta.innerText = entregues; // Simplificação: meta = entregues no mes
+
+    // Cálculo Simples de Produtividade (Entregues vs Total que tinha)
+    // Em um sistema real, viria do backend. Aqui simulamos.
+    let totalMes = entregues + pendentes;
+    let prod = totalMes > 0 ? Math.round((entregues / totalMes) * 100) : 0;
+    if(elProd) elProd.innerText = prod + '%';
+
+    // 3. Lista de Foco
+    const lista = document.getElementById('listaTarefasColab');
+    if(lista) {
+        if(data.minhas_tarefas.length === 0) {
+            lista.innerHTML = `<div style="text-align:center; color:#ccc; padding:30px;">Sem tarefas pendentes. Bom trabalho! 🚀</div>`;
         } else {
-            listaFoco.innerHTML = data.minhas_tarefas.map(t => {
-                // Escapa aspas para passar o objeto no onclick
+            lista.innerHTML = data.minhas_tarefas.map(t => {
+                // Prepara JSON seguro
                 const tJson = JSON.stringify(t).replace(/"/g, '&quot;');
                 
-                // Formata data
-                const prazo = t.prazo ? new Date(t.prazo).toLocaleDateString('pt-BR') : 'Sem Prazo';
-                
+                // Classe Prioridade
+                let pClass = 'tp-normal';
+                if(t.prioridade === 'URGENTE') pClass = 'tp-alta';
+                else if(t.prioridade === 'IMPORTANTE') pClass = 'tp-media';
+
+                // Data formatada
+                let dataF = t.prazo ? new Date(t.prazo).toLocaleDateString('pt-BR') : 'Sem data';
+
                 return `
-                <div class="task-focus-card priority-${t.prioridade}" onclick="carregarChecklistLateral(${tJson})">
-                    <div style="font-size:0.75rem; color:#888; text-transform:uppercase; margin-bottom:5px; font-weight:600;">
-                        ${t.projeto_nome || 'Geral'} • ${prazo}
+                <div class="task-row" onclick="abrirPainelTarefa('${tJson}')">
+                    <div class="task-icon">${ICONS.task}</div>
+                    <div class="task-info">
+                        <h4>${t.titulo}</h4>
+                        <span>${t.projeto_nome || 'Geral'} • ${dataF}</span>
                     </div>
-                    <div style="font-weight:700; font-size:1.1rem; color:#333; padding-right:50px; line-height:1.4;">
-                        ${t.titulo}
-                    </div>
-                    <div class="play-btn" title="Iniciar / Ver Detalhes">
-                        ${ICONS.play}
-                    </div>
-                </div>`;
+                    <span class="task-prio ${pClass}">${t.prioridade}</span>
+                    <div style="margin-left:15px; color:#ddd;">&#10095;</div>
+                </div>
+                `;
             }).join('');
         }
     }
 
-    // 3. Renderiza Meus Projetos (Lateral)
-    const listaProjetos = document.getElementById('listaProjetosSimples');
-    if(listaProjetos && data.meus_projetos) {
-        if(data.meus_projetos.length === 0) {
-            listaProjetos.innerHTML = '<small style="color:#aaa">Nenhum projeto vinculado.</small>';
-        } else {
-            listaProjetos.innerHTML = data.meus_projetos.map(p => `
-                <div style="padding:12px 0; border-bottom:1px solid #f0f0f0; display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-weight:600; color:#555; font-size:0.9rem;">${p.nome}</span>
-                    <span style="font-size:0.7rem; background:#e3f2fd; color:#0d6efd; padding:3px 8px; border-radius:10px; font-weight:700;">ATIVO</span>
-                </div>
-            `).join('');
-        }
-    }
-    
-    // 4. KPI Produtividade (Exemplo usando dados da API)
-    const kpiProd = document.getElementById('prodNumber');
-    if(kpiProd && data.kpis) {
-        // Tenta achar o KPI de "Entregues" pelo ícone ou título
-        const delivered = data.kpis.find(k => k.icone === 'check' || k.titulo.includes('Entregues'));
-        if(delivered) kpiProd.innerText = delivered.valor;
+    // 4. Renderizar Gráfico de Produtividade (Colaborador)
+    const ctx = document.getElementById('chartProdColab');
+    if (ctx && data.grafico) {
+        if(window.myChartColab) window.myChartColab.destroy();
+        
+        window.myChartColab = new Chart(ctx.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: data.grafico.labels,
+                datasets: [{
+                    label: 'Entregas',
+                    data: data.grafico.data,
+                    borderColor: '#4318FF',
+                    backgroundColor: 'rgba(67, 24, 255, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#4318FF',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { borderDash: [5, 5] }, ticks: { stepSize: 1 } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
     }
 }
 

@@ -8,7 +8,6 @@ require_once __DIR__ . '/funcoes.php';
 function renderizar_sidebar()
 {
     $paginaAtual = basename($_SERVER['PHP_SELF']);
-<<<<<<< HEAD
     
     // Verifica papel para aplicar tema azul e restrições
     $sessao = $_SESSION[SESSAO_USUARIO_KEY] ?? [];
@@ -23,14 +22,6 @@ function renderizar_sidebar()
     $nomeEmpresa = "Minha Empresa"; // Fallback padrão
     
     if (isset($sessao['empresa_id'])) {
-=======
-
-    // --- Lógica para buscar Logo e Nome do Cliente ---
-    $logoClienteUrl = null;
-    $nomeEmpresa = "Minha Empresa"; // Fallback padrão
-
-    if (isset($_SESSION[SESSAO_USUARIO_KEY]['empresa_id'])) {
->>>>>>> b501d66d652d5dcc44d610fe1cf3e1bfb16fecf1
         try {
             $pdo = conectar_db();
             $stmt = $pdo->prepare("SELECT nome, logo_url FROM empresa WHERE id = ?");
@@ -52,15 +43,12 @@ function renderizar_sidebar()
         $classeExtra = 'sidebar-gestor';
     }
     ?>
-<<<<<<< HEAD
     
     <div class="sidebar <?= $classeTema ?>">
         
-=======
 
     <div class="sidebar <?= $classeExtra ?>">
 
->>>>>>> b501d66d652d5dcc44d610fe1cf3e1bfb16fecf1
         <div class="sidebar-header">
             <div class="client-logo-wrapper">
                 <?php if ($logoClienteUrl): ?>

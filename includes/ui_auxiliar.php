@@ -1,12 +1,14 @@
 <?php
 // ARQUIVO: includes/ui_auxiliar.php
-require_once __DIR__ . '/funcoes.php'; 
+require_once __DIR__ . '/funcoes.php';
 
 // =============================================================================
 // RENDERIZA A SIDEBAR COMPLETA (DINÂMICA)
 // =============================================================================
-function renderizar_sidebar(){
+function renderizar_sidebar()
+{
     $paginaAtual = basename($_SERVER['PHP_SELF']);
+<<<<<<< HEAD
     
     // Verifica papel para aplicar tema azul e restrições
     $sessao = $_SESSION[SESSAO_USUARIO_KEY] ?? [];
@@ -21,6 +23,14 @@ function renderizar_sidebar(){
     $nomeEmpresa = "Minha Empresa"; // Fallback padrão
     
     if (isset($sessao['empresa_id'])) {
+=======
+
+    // --- Lógica para buscar Logo e Nome do Cliente ---
+    $logoClienteUrl = null;
+    $nomeEmpresa = "Minha Empresa"; // Fallback padrão
+
+    if (isset($_SESSION[SESSAO_USUARIO_KEY]['empresa_id'])) {
+>>>>>>> b501d66d652d5dcc44d610fe1cf3e1bfb16fecf1
         try {
             $pdo = conectar_db();
             $stmt = $pdo->prepare("SELECT nome, logo_url FROM empresa WHERE id = ?");
@@ -33,12 +43,24 @@ function renderizar_sidebar(){
                     $logoClienteUrl = '../public/' . $empresa['logo_url'];
                 }
             }
-        } catch (Exception $e) { /* Silêncio */ }
+        } catch (Exception $e) { /* Silêncio */
+        }
+    }
+    // --- Lógica de Classe Extra (GESTOR) ---
+    $classeExtra = '';
+    if (isset($_SESSION[SESSAO_USUARIO_KEY]['papel']) && $_SESSION[SESSAO_USUARIO_KEY]['papel'] === 'GESTOR') {
+        $classeExtra = 'sidebar-gestor';
     }
     ?>
+<<<<<<< HEAD
     
     <div class="sidebar <?= $classeTema ?>">
         
+=======
+
+    <div class="sidebar <?= $classeExtra ?>">
+
+>>>>>>> b501d66d652d5dcc44d610fe1cf3e1bfb16fecf1
         <div class="sidebar-header">
             <div class="client-logo-wrapper">
                 <?php if ($logoClienteUrl): ?>
@@ -49,7 +71,7 @@ function renderizar_sidebar(){
                     </span>
                 <?php endif; ?>
             </div>
-            
+
             <div class="client-name-text">
                 <?= htmlspecialchars($nomeEmpresa) ?>
             </div>
@@ -76,7 +98,8 @@ function renderizar_sidebar(){
                 <?= getIcone('pasta') ?> Projetos
             </a>
 
-            <a href="minhas_tarefas.php" class="nav-item <?= (strpos($paginaAtual, 'tarefa') !== false && strpos($paginaAtual, 'projeto') === false) ? 'active' : '' ?>">
+            <a href="minhas_tarefas.php"
+                class="nav-item <?= (strpos($paginaAtual, 'tarefa') !== false && strpos($paginaAtual, 'projeto') === false) ? 'active' : '' ?>">
                 <?= getIcone('task') ?> Minhas Tarefas
             </a>
 
@@ -105,19 +128,35 @@ function renderizar_sidebar(){
         </div>
 
         <div class="sidebar-footer">
-            <?php 
-                $logoSys = '../imgs/logo coworking.png';
-                if (!file_exists(__DIR__ . '/../imgs/logo coworking.png')) {
-                    $logoSys = '../css/coworking_digital.svg';
-                }
+            <?php
+            $nomeUsuarioFooter = htmlspecialchars($_SESSION[SESSAO_USUARIO_KEY]['nome'] ?? 'Usuário');
             ?>
-            <img src="<?= $logoSys ?>" alt="Sistema Coworking" class="system-logo-img">
+            <div style="
+                background: #f8f9fa; 
+                padding: 12px 15px; 
+                border-radius: 12px; 
+                border: 1px solid #eef0f7;
+                color: #2b3674; 
+                font-weight: 700; 
+                font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            ">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"
+                    style="color: #0d6efd;">
+                    <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                </svg>
+                <?= $nomeUsuarioFooter ?>
+            </div>
         </div>
 
     </div>
     <script>
         function logoutSistema() {
-            if(confirm('Deseja realmente sair do sistema?')) {
+            if (confirm('Deseja realmente sair do sistema?')) {
                 // Efeito visual de carregamento
                 document.body.style.cursor = 'wait';
                 fetch('../api/logout.php', { method: 'POST' })
@@ -133,7 +172,8 @@ function renderizar_sidebar(){
 // OUTRAS FUNÇÕES DE UI (PAINEL LOGIN, HEADER, ETC)
 // =============================================================================
 
-function renderizar_painel_info() {
+function renderizar_painel_info()
+{
     // Ícones decorativos para a lateral do login
     $icones = [
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>',
@@ -154,8 +194,9 @@ function renderizar_painel_info() {
     <?php
 }
 
-function renderizar_logo() {
-    $logoSistema = '../imgs/logo coworking.png'; 
+function renderizar_logo()
+{
+    $logoSistema = '../imgs/logo coworking.png';
     if (!file_exists(__DIR__ . '/../imgs/logo coworking.png')) {
         $logoSistema = '../css/coworking_digital.svg';
     }
@@ -166,12 +207,13 @@ function renderizar_logo() {
     <?php
 }
 
-function renderizar_topo_personalizado() {
+function renderizar_topo_personalizado()
+{
     $nomeUsuario = htmlspecialchars($_SESSION[SESSAO_USUARIO_KEY]['nome'] ?? 'Usuário');
     $iniciais = strtoupper(substr($nomeUsuario, 0, 2));
     ?>
     <div class="topbar">
-        <div></div> 
+        <div></div>
 
         <div class="profile">
             <div style="text-align:right; font-size:0.85rem; color:#666; margin-right:10px;">

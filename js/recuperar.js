@@ -1,4 +1,5 @@
 // /js/recuperar.js
+//atualização
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- Funções de Ajuda ---

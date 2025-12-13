@@ -1,4 +1,5 @@
 // ARQUIVO: js/projetos.js
+//atualização
 
 document.addEventListener('DOMContentLoaded', () => {
     const modalProjeto = document.getElementById('modalProjeto');

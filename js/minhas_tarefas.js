@@ -1,4 +1,5 @@
 // ARQUIVO: js/minhas_tarefas.js
+//atualização
 
 function abrirModalExecucao(tarefa) {
     const modal = document.getElementById('modalExecucao');

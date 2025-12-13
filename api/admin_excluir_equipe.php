@@ -1,4 +1,5 @@
 <?php
+//atualização
 // ARQUIVO: api/admin_excluir_equipe.php
 ob_start();
 header("Content-Type: application/json; charset=UTF-8");

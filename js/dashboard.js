@@ -1,5 +1,5 @@
 // ARQUIVO: js/dashboard.js
-
+//atualização
 document.addEventListener('DOMContentLoaded', () => {
     carregarDashboard();
 });

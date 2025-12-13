@@ -1,4 +1,5 @@
 <?php
+//atualização
 // ARQUIVO: api/login.php
 require_once 'funcoes_api.php';
 require_once __DIR__ . '/../config/config.php';

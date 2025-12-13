@@ -1,4 +1,5 @@
 <?php
+//atualização
 // ARQUIVO: public/redefinir_senha.php
 require_once __DIR__ . '/../includes/seguranca.php';
 require_once __DIR__ . '/../includes/ui_auxiliar.php';

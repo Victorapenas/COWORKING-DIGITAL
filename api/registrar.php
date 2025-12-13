@@ -1,4 +1,5 @@
 <?php
+//atualização
 // /api/registrar.php
 
 require_once 'funcoes_api.php';

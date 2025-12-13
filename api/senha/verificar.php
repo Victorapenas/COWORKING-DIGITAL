@@ -1,4 +1,5 @@
 <?php
+//atualização
 // /api/senha/verificar.php
 
 require_once __DIR__ . '/../funcoes_api.php';

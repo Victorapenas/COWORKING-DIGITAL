@@ -1,4 +1,5 @@
 <?php
+//atualização
 // ARQUIVO: api/admin_excluir_membro.php
 ob_start();
 ini_set('display_errors', 0);

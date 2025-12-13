@@ -1,4 +1,5 @@
 <?php
+//atualização
 // /public/esqueci_senha.php
 
 require_once __DIR__ . '/../includes/seguranca.php';

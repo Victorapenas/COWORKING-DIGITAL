@@ -1,4 +1,5 @@
 <?php
+//atualização
 // ARQUIVO: api/relatorios_dados.php
 require_once __DIR__ . '/../includes/seguranca.php';
 require_once __DIR__ . '/funcoes_api.php';

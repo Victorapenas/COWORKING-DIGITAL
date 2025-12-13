@@ -1,3 +1,4 @@
+//atualização
 document.addEventListener('DOMContentLoaded', () => {
     
     // --- ATUALIZAR PERFIL ---

@@ -1,4 +1,5 @@
 <?php
+//atualização
 // /config/config.php
 
 // Constantes de Configuração do Projeto

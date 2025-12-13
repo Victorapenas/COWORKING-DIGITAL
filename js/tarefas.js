@@ -1,3 +1,4 @@
+//atualização
 // ARQUIVO: js/tarefas.js (CORRIGIDO E SIMPLIFICADO)
 
 document.addEventListener('DOMContentLoaded', () => {

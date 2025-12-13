@@ -1,4 +1,5 @@
 <?php
+//atualização
 // /api/funcoes_api.php
 
 require_once __DIR__ . '/../includes/funcoes.php';

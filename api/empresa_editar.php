@@ -1,4 +1,5 @@
 <?php
+//atualização
 // ARQUIVO: api/empresa_editar.php
 
 // 1. Limpa qualquer saída anterior (Warnings, HTML, espaços)

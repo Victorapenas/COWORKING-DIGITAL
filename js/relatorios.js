@@ -1,4 +1,5 @@
 // ARQUIVO: js/relatorios.js
+//atualização
 
 let chartBarInstance = null;
 let chartDoughnutInstance = null;

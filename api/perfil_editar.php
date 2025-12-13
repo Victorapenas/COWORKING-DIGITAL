@@ -1,4 +1,5 @@
 <?php
+//atualização
 // ARQUIVO: api/perfil_editar.php
 ob_start();
 ini_set('display_errors', 0);

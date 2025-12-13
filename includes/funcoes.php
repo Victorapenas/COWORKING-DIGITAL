@@ -1,4 +1,5 @@
 <?php
+//atualização
 // ARQUIVO: includes/funcoes.php
 require_once __DIR__ . '/../config/conexao.php';
 

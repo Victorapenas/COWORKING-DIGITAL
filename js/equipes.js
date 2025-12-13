@@ -1,4 +1,5 @@
 // /js/equipes.js
+//atualização
 
 // === LÓGICA DE EXCLUSÃO/RESTAURAÇÃO DE MEMBROS ===
 async function confirmarExclusaoMembro(tipo, idDireto = null) {

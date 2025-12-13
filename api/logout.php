@@ -1,4 +1,5 @@
 <?php
+//atualização
 // /api/logout.php
 
 // Carrega o segurança para ter acesso à função encerrar_sessao()

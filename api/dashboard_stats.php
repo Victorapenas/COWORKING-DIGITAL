@@ -1,4 +1,5 @@
 <?php
+//atualização
 // ARQUIVO: api/dashboard_stats.php
 
 // 1. Blindagem de Erros (Evita que Warnings quebrem o JSON)

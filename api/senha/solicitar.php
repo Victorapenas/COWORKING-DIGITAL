@@ -1,4 +1,5 @@
 <?php
+//atualização
 // ARQUIVO: api/senha/solicitar.php
 require_once __DIR__ . '/../funcoes_api.php';
 require_once __DIR__ . '/../servico_email.php'; // Importante incluir isso!

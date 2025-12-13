@@ -1,4 +1,5 @@
 <?php
+//atualização
 // ARQUIVO: public/fix_senha.php
 require_once __DIR__ . '/../config/conexao.php';
 

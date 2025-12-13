@@ -1,4 +1,5 @@
 // ARQUIVO: js/calendario.js
+//atualização
 
 document.addEventListener('DOMContentLoaded', function() {
     var calendarEl = document.getElementById('calendar');

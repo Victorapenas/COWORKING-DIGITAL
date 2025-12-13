@@ -1,4 +1,5 @@
 <?php
+//atualização
 // ARQUIVO: api/projeto_editar.php (CORREÇÃO FINAL DE DUPLICAÇÃO)
 ob_start(); 
 ini_set('display_errors', 0); 

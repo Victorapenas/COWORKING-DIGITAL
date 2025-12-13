@@ -1,4 +1,5 @@
 <?php
+//atualização
 // ARQUIVO: includes/ui_auxiliar.php
 require_once __DIR__ . '/funcoes.php';
 

@@ -1,4 +1,5 @@
 <?php
+//atualização
 // ARQUIVO: api/projeto_excluir.php
 ob_start();
 ini_set('display_errors', 0);

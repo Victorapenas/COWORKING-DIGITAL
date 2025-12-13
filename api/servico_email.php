@@ -1,4 +1,5 @@
 <?php
+//atualização
 // ARQUIVO: api/servico_email.php
 
 function enviar_email_codigo($destinatario, $nome, $codigo) {

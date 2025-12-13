@@ -1,4 +1,5 @@
 <?php
+//atualização
 // /api/me.php - Retorna os dados da sessão do usuário logado
 
 require_once 'funcoes_api.php';

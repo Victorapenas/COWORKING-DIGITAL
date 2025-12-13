@@ -1,4 +1,5 @@
 <?php
+//atualização
 // ARQUIVO: api/admin_criar_equipe.php
 
 // 1. Blindagem (Output Buffering)

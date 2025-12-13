@@ -6,3 +6,4 @@
 [FALHA NO ENVIO REAL - REQUER SMTP] [07/12/2025 23:08:22] Para: queteli@coworking.com | Código: 8796
 [FALHA NO ENVIO REAL - REQUER SMTP] [07/12/2025 23:41:43] Para: jhon@coworking.com | Código: 8437
 [FALHA NO ENVIO REAL - REQUER SMTP] [07/12/2025 23:47:36] Para: queteli@coworking.com | Código: 0820
+[FALHA NO ENVIO REAL - REQUER SMTP] [13/12/2025 01:07:58] Para: ian@coworking.com | Código: 9608

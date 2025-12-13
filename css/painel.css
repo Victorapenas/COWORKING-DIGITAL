@@ -80,19 +80,6 @@ body {
     border-bottom: 1px solid transparent;
 }
 
-/* --- TOPO DA SIDEBAR (Logo do Cliente) --- */
-.sidebar-header {
-    flex-shrink: 0;
-    padding: 35px 20px 20px 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    background: var(--bg-card);
-    border-bottom: 1px solid transparent;
-}
-
 .client-logo-wrapper {
     width: 90px;
     height: 90px;
@@ -648,24 +635,25 @@ body {
     gap: 12px;
 }
 
-/* Componentes de Membros e Arquivos */
+/* Componentes de Membros e Arquivos (versão consolidada) */
 .member-card-modern {
     background: #fff;
+    border: 1px solid #eef0f7;
     border-radius: 16px;
-    padding: 25px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
-    border: 1px solid #f0f0f0;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
     display: flex;
     flex-direction: column;
     gap: 15px;
-    transition: transform 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
     position: relative;
 }
 
 .member-card-modern:hover {
-    transform: translateY(-5px);
-    border-color: var(--primary);
-    box-shadow: var(--shadow-hover);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    border-color: var(--primary-light);
 }
 
 .mem-card-header {
@@ -675,26 +663,27 @@ body {
 }
 
 .mem-avatar-large {
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-    color: var(--primary);
-    font-weight: 800;
+    width: 55px;
+    height: 55px;
     border-radius: 50%;
+    background: linear-gradient(135deg, #e3f2fd 0%, #90caf9 100%);
+    color: var(--primary);
+    font-size: 1.1rem;
+    font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
     position: relative;
+    flex-shrink: 0;
     border: 3px solid #fff;
-    box-shadow: 0 4px 10px rgba(13, 110, 253, 0.15);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
 .mem-online-badge {
-    width: 14px;
-    height: 14px;
-    background: #ccc;
-    border: 2px solid white;
+    width: 12px;
+    height: 12px;
+    background-color: #ccc;
+    border: 2px solid #fff;
     border-radius: 50%;
     position: absolute;
     bottom: 0;
@@ -702,29 +691,31 @@ body {
 }
 
 .mem-online-badge.online {
-    background: #05cd99;
-    box-shadow: 0 0 5px #05cd99;
+    background-color: #05cd99;
+    box-shadow: 0 0 0 2px rgba(5, 205, 153, 0.2);
 }
 
 .mem-info h4 {
     margin: 0;
-    color: var(--text-main);
     font-size: 1rem;
     font-weight: 700;
+    color: var(--text-main);
 }
 
 .mem-info p {
-    margin: 2px 0 0;
+    margin: 3px 0 0 0;
+    font-size: 0.85rem;
     color: var(--text-sec);
-    font-size: 0.8rem;
+    font-weight: 500;
 }
 
 .role-tag {
     font-size: 0.7rem;
     font-weight: 700;
-    padding: 5px 12px;
-    border-radius: 20px;
+    padding: 4px 10px;
+    border-radius: 6px;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .role-dono {
@@ -732,40 +723,107 @@ body {
     color: #6A66FF;
 }
 
-.file-card-item {
-    background: #fff;
-    border: 1px solid #eef0f7;
-    border-radius: 16px;
-    padding: 20px;
-    text-align: center;
-    text-decoration: none;
-    transition: all 0.2s ease;
+.role-gestor {
+    background: #fff8e1;
+    color: #f57f17;
+}
+
+.role-colab {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+/* --- A BARRA DE PROGRESSO (QUE HAVIA SUMIDO) --- */
+.mem-progress-container {
+    width: 100%;
+    margin-top: 5px;
+}
+
+.prog-labels {
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-sec);
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.prog-track {
+    width: 100%;
+    height: 6px;
+    background-color: #f0f2f5;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.prog-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary) 0%, #6A66FF 100%);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+
+.mem-footer {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    height: 180px;
-    position: relative;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.01);
+    border-top: 1px dashed #eee;
+    padding-top: 15px;
+    margin-top: 5px;
 }
 
-.file-card-item:hover {
-    border-color: #6A66FF;
-    transform: translateY(-4px);
-    box-shadow: 0 10px 20px rgba(106, 102, 255, 0.1);
+/* Botões de ação do membro */
+.mem-actions-btn {
+    display: flex;
+    gap: 8px;
 }
 
-.file-icon-circle {
-    width: 60px;
-    height: 60px;
-    background: #f4f7fe;
-    border-radius: 50%;
+/* Checklist items */
+.checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.checklist-item input[type="checkbox"] {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px;
+    margin: 0 !important;
+    padding: 0 !important;
+    flex-shrink: 0;
+    cursor: pointer;
+    align-self: center;
+}
+
+.checklist-item input[type="text"] {
+    flex-grow: 1;
+    margin: 0 !important;
+    padding: 10px 14px !important;
+    line-height: 1.2;
+}
+
+.checklist-item .remover-btn {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #6A66FF;
-    margin-bottom: 15px;
-    transition: 0.2s;
-    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.checklist-item .remover-btn:hover {
+    background: var(--danger);
+    color: white;
 }
 
 /* --- ESTILO DO DROPDOWN CUSTOMIZADO (Usado em Projetos/Equipes) --- */
@@ -950,7 +1008,6 @@ input[type="file"]:hover {
     display: flex;
     gap: 20px;
     border-bottom: 1px solid #e0e5f2;
-    /* Linha cinza embaixo */
     margin-bottom: 30px;
     padding-left: 10px;
 }
@@ -965,27 +1022,22 @@ input[type="file"]:hover {
     color: var(--text-sec);
     cursor: pointer;
     border-bottom: 3px solid transparent;
-    /* Borda invisível para alinhar */
     transition: all 0.2s ease;
 }
 
 .tab-btn:hover {
     color: var(--primary);
-    /* Azul ao passar o mouse */
 }
 
 .tab-btn.active {
     color: var(--primary);
-    /* Azul quando ativo */
     border-bottom-color: var(--primary);
-    /* Linha azul embaixo */
 }
 
 /* =============================================================================
    5. BOTÕES ESPECÍFICOS DA PÁGINA DE EQUIPES (Correção Visual)
    ============================================================================= */
 
-/* Botão "+ Adicionar Sócio" (Pequeno, discreto) */
 .btn-add-socio {
     background-color: #ffffff;
     border: 1px solid #e0e5f2;
@@ -1007,12 +1059,9 @@ input[type="file"]:hover {
     transform: translateY(-1px);
 }
 
-/* Botão "+ Membro" (Dentro do card da equipe) */
 .botao-equipe {
     background-color: #f0f7ff;
-    /* Azul bem clarinho */
     color: var(--primary);
-    /* Azul padrão */
     border: 1px solid #cce5ff;
     padding: 6px 12px;
     border-radius: 8px;
@@ -1029,7 +1078,6 @@ input[type="file"]:hover {
     box-shadow: 0 2px 5px rgba(13, 110, 253, 0.2);
 }
 
-/* Ícones de Ação (Editar/Excluir - Engrenagem e Lixeira) */
 .btn-icon {
     background: transparent;
     border: 1px solid transparent;
@@ -1037,7 +1085,6 @@ input[type="file"]:hover {
     padding: 6px;
     border-radius: 6px;
     color: var(--text-sec);
-    /* Cinza */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1049,37 +1096,25 @@ input[type="file"]:hover {
     width: 18px;
     height: 18px;
     stroke-width: 2;
-    /* Garante que o ícone fique nítido */
 }
 
-/* Hover: Editar fica Azul */
 .btn-icon:hover {
     color: var(--primary);
     background-color: var(--primary-light);
 }
 
-/* Hover: Excluir fica Vermelho */
 .btn-icon.del:hover {
     color: var(--danger);
     background-color: var(--danger-bg);
-}
-
-/* Ajuste para o container dos botões na direita do card */
-.mem-actions-btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
 }
 
 /* =============================================================================
    6. CORREÇÃO VISUAL AVANÇADA - CARDS DE EQUIPE E BARRAS
    ============================================================================= */
 
-/* Cabeçalho da Seção (Liderança, Equipes) */
 .team-header {
     display: flex;
     justify-content: space-between;
-    /* Joga título pra esq, botão pra dir */
     align-items: center;
     margin-bottom: 25px;
     padding-bottom: 15px;
@@ -1102,215 +1137,8 @@ input[type="file"]:hover {
     margin-left: 10px;
 }
 
-/* Card do Membro (Estrutura) */
-.member-card-modern {
-    background: #fff;
-    border: 1px solid #eef0f7;
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.member-card-modern:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-    border-color: var(--primary-light);
-}
-
-/* Topo do Card: Avatar + Texto */
-.mem-card-header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-/* Avatar (Foto/Iniciais) */
-.mem-avatar-large {
-    width: 55px;
-    height: 55px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #e3f2fd 0%, #90caf9 100%);
-    color: var(--primary);
-    font-size: 1.1rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    flex-shrink: 0;
-    /* Impede que o avatar amasse */
-    border: 3px solid #fff;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-}
-
-/* Bolinha Online */
-.mem-online-badge {
-    width: 12px;
-    height: 12px;
-    background-color: #ccc;
-    border: 2px solid #fff;
-    border-radius: 50%;
-    position: absolute;
-    bottom: 0;
-    right: 0;
-}
-
-.mem-online-badge.online {
-    background-color: #05cd99;
-    /* Verde */
-    box-shadow: 0 0 0 2px rgba(5, 205, 153, 0.2);
-}
-
-/* Informações de Texto */
-.mem-info h4 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--text-main);
-}
-
-.mem-info p {
-    margin: 3px 0 0 0;
-    font-size: 0.85rem;
-    color: var(--text-sec);
-    font-weight: 500;
-}
-
-/* --- A BARRA DE PROGRESSO (QUE HAVIA SUMIDO) --- */
-.mem-progress-container {
-    width: 100%;
-    margin-top: 5px;
-}
-
-.prog-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.75rem;
-    color: var(--text-sec);
-    font-weight: 600;
-    margin-bottom: 6px;
-}
-
-.prog-track {
-    width: 100%;
-    height: 6px;
-    background-color: #f0f2f5;
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.prog-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--primary) 0%, #6A66FF 100%);
-    border-radius: 10px;
-    transition: width 0.5s ease;
-}
-
-/* Rodapé do Card: Cargo na esq, Botões na dir */
-.mem-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-top: 1px dashed #eee;
-    padding-top: 15px;
-    margin-top: 5px;
-}
-
-/* Tags de Cargo */
-.role-tag {
-    font-size: 0.7rem;
-    font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.role-dono {
-    background: #efeaff;
-    color: #6A66FF;
-}
-
-.role-gestor {
-    background: #fff8e1;
-    color: #f57f17;
-}
-
-.role-colab {
-    background: #e3f2fd;
-    color: #1976d2;
-}
-
-/* Botões de Ação (Engrenagem/Lixo) */
-.mem-actions-btn {
-    display: flex;
-    gap: 8px;
-}
-
-.checklist-item {
-    display: flex;
-    align-items: center;
-    /* Garante alinhamento vertical */
-    gap: 10px;
-    /* Espaçamento entre os elementos */
-    margin-bottom: 12px;
-}
-
-.checklist-item input[type="checkbox"] {
-    /* Reinicia o estilo do checkbox para garantir que ele não tenha margens ou bordas estranhas */
-    width: 20px !important;
-    height: 20px !important;
-    min-width: 20px;
-    margin: 0 !important;
-    padding: 0 !important;
-    /* Remove qualquer padding forçado */
-    flex-shrink: 0;
-    cursor: pointer;
-    /* Alinhamento forçado para o centro da linha */
-    align-self: center;
-}
-
-.checklist-item input[type="text"] {
-    /* Garante que o input de texto ocupe o espaço restante e defina a altura da linha */
-    flex-grow: 1;
-    margin: 0 !important;
-    /* Remove margem que poderia estar desalinhando */
-    padding: 10px 14px !important;
-    line-height: 1.2;
-    /* Ajuda a centralizar o texto dentro do campo */
-}
-
-.checklist-item .remover-btn {
-    /* Botão de exclusão */
-    background: var(--danger-bg);
-    color: var(--danger);
-    border: 1px solid var(--danger);
-    /* Mantém a altura similar ao input de texto para alinhamento visual */
-    width: 38px;
-    height: 38px;
-    border-radius: 8px;
-    font-size: 1.2rem;
-    font-weight: 700;
-    cursor: pointer;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-}
-
-.checklist-item .remover-btn:hover {
-    background: var(--danger);
-    color: white;
-}
-
 /* =============================================================================
-   7. TEMA SIDEBAR GESTOR (AZUL)
+   7. TEMA SIDEBAR GESTOR (AZUL) & TEMA COLABORADOR
    ============================================================================= */
 .sidebar-gestor {
     background: var(--primary) !important;
@@ -1326,7 +1154,6 @@ input[type="file"]:hover {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Ajuste no wrapper da logo para ficar harmônico no fundo azul */
 .sidebar-gestor .client-logo-wrapper {
     border-color: rgba(255, 255, 255, 0.2) !important;
     background: white;
@@ -1372,7 +1199,6 @@ input[type="file"]:hover {
     border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Ajuste do box do usuário no footer para o tema azul */
 .sidebar-gestor .sidebar-footer>div {
     background: rgba(255, 255, 255, 0.1) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
@@ -1382,3 +1208,66 @@ input[type="file"]:hover {
 .sidebar-gestor .sidebar-footer svg {
     color: rgba(255, 255, 255, 0.8) !important;
 }
+
+/* --- TEMA COLABORADOR (AZUL) --- */
+.sidebar.theme-blue {
+    background: var(--primary);
+    border-right: none;
+    color: white;
+}
+
+.sidebar.theme-blue .nav-title {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.sidebar.theme-blue .nav-item {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.sidebar.theme-blue .nav-item:hover,
+.sidebar.theme-blue .nav-item.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    box-shadow: none;
+}
+
+.sidebar.theme-blue .separator {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar.theme-blue .client-name-text,
+.sidebar.theme-blue .client-logo-wrapper {
+    color: white;
+    border-color: rgba(255,255,255,0.3);
+}
+
+/* Timer Flutuante (Estilo) */
+.timer-badge {
+    background: #ffebee;
+    color: #c62828;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    border: 1px solid #ffcdd2;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.timer-running {
+    animation: pulse 1s infinite;
+}
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* Modal de Execução */
+#execChecklistArea h4 {
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 8px;
+}
+
+/* ARQUIVO: css/painel.css - ADICIONAR NO FINAL */
+/* FIM */

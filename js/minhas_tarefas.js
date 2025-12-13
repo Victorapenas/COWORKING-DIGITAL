@@ -43,6 +43,20 @@ function abrirModalExecucao(tarefa) {
         `;
     }
 
+    // --- NOVO BLOCO: Configura o Feedback do Gestor ---
+    const feedbackArea = document.getElementById('execFeedbackArea');
+    const feedbackText = document.getElementById('execFeedbackText');
+
+    // Assume que o campo 'feedback_revisao' é retornado pela API e a tarefa está ativa após uma devolução.
+    if (tarefa.feedback_revisao && tarefa.status === 'EM_ANDAMENTO') {
+        feedbackText.innerText = tarefa.feedback_revisao;
+        feedbackArea.style.display = 'block';
+    } else {
+        feedbackArea.style.display = 'none';
+        feedbackText.innerText = '';
+    }
+    // --- FIM NOVO BLOCO FEEDBACK ---
+
     // Configura o Select de Status (Lógica de Fluxo)
     configurarSelectStatus(tarefa.status);
 
@@ -77,6 +91,7 @@ function configurarSelectStatus(statusAtual) {
 
 /**
  * Renderiza o checklist com lógica de tipos (Arquivo, Link, Check)
+ * ALTERADO para incluir checkbox na submissão do formulário.
  */
 function renderizarChecklistRico(checklistJson, tarefaId) {
     const container = document.getElementById('listaChecklistColab');
@@ -101,7 +116,8 @@ function renderizarChecklistRico(checklistJson, tarefaId) {
     
     itens.forEach((item, idx) => {
         const isDone = item.concluido == 1;
-        const tipo = item.tipo_evidencia || 'check'; // check, arquivo, link
+        // O tipo do item simples agora é 'toggle' ou 'check' (mantendo compatibilidade)
+        const tipo = item.tipo_evidencia || 'toggle'; 
         const formatos = item.formatos || '*'; // ex: .png, .pdf
         
         let acaoHtml = '';
@@ -118,14 +134,25 @@ function renderizarChecklistRico(checklistJson, tarefaId) {
                 labelEvidencia = item.evidencia_nome || "Ver Entrega";
             }
 
-            acaoHtml = `
-                <div class="chk-done-box">
-                    <a href="${link}" target="_blank" class="link-evidencia">
-                        ✅ ${labelEvidencia}
-                    </a>
-                    <button type="button" onclick="removerEvidencia(${tarefaId}, ${idx})" class="btn-remove-evidencia" title="Remover/Refazer">&times;</button>
-                </div>
-            `;
+            // Para itens simples (toggle), o status final é salvo via submissão principal
+            if (tipo === 'toggle') {
+                 acaoHtml = `
+                    <label class="custom-chk">
+                        <input type="checkbox" name="checklist_done[]" value="${idx}" checked>
+                        <span class="chk-checkmark"></span>
+                        <span style="font-size:0.8rem; color:#05cd99; font-weight: 600;">Marcado como Feito</span>
+                    </label>
+                `;
+            } else {
+                acaoHtml = `
+                    <div class="chk-done-box">
+                        <a href="${link}" target="_blank" class="link-evidencia">
+                            ✅ ${labelEvidencia}
+                        </a>
+                        <button type="button" onclick="removerEvidencia(${tarefaId}, ${idx})" class="btn-remove-evidencia" title="Remover/Refazer">&times;</button>
+                    </div>
+                `;
+            }
         } 
         // CASO 2: ITEM PENDENTE (Mostra o input correto)
         else {
@@ -148,10 +175,11 @@ function renderizarChecklistRico(checklistJson, tarefaId) {
                     </div>
                 `;
             } else {
-                // Checkbox Simples
+                // Checkbox Simples (TIPO TOGGLE/CHECK)
+                // Usamos o name="checklist_done[]" para ser enviado na submissão do formulário principal
                 acaoHtml = `
                     <label class="custom-chk">
-                        <input type="checkbox" onchange="toggleItemSimples(${tarefaId}, ${idx}, this)">
+                        <input type="checkbox" name="checklist_done[]" value="${idx}">
                         <span class="chk-checkmark"></span>
                         <span style="font-size:0.8rem; color:#666;">Marcar como feito</span>
                     </label>
@@ -166,7 +194,7 @@ function renderizarChecklistRico(checklistJson, tarefaId) {
                     <span class="chk-index">${idx + 1}</span>
                     <div class="chk-texts">
                         <span class="chk-desc">${item.descricao}</span>
-                        ${tipo !== 'check' ? `<span class="chk-type-badge">${tipo === 'arquivo' ? 'Requer Arquivo' : 'Requer Link'}</span>` : ''}
+                        ${tipo !== 'toggle' ? `<span class="chk-type-badge">${tipo === 'arquivo' ? 'Requer Arquivo' : 'Requer Link'}</span>` : ''}
                     </div>
                 </div>
                 <div class="chk-action-area">
@@ -176,10 +204,16 @@ function renderizarChecklistRico(checklistJson, tarefaId) {
         `;
     });
 
-    container.innerHTML = html;
+    // Envolve a lista em um form que será submetido com o formulário principal
+    container.innerHTML = `<div id="checklistFormContainer">${html}</div>`;
 }
 
-// --- FUNÇÕES AUXILIARES DE AÇÃO ---
+// --- FUNÇÕES AUXILIARES DE AÇÃO (As funções de upload, salvarLink, removerEvidencia e toggleItemSimples
+// que dependem de `tarefa_checklist_toggle.php` ficam inalteradas ou foram removidas/adaptadas) ---
+
+// As funções que manipulavam o status de checklist simples via AJAX (toggleItemSimples) não são mais necessárias
+// para itens simples, pois o status será salvo na submissão do formulário principal.
+// Itens de arquivo/link continuam usando a API separada.
 
 /**
  * Envia arquivo para o servidor via AJAX
@@ -263,33 +297,20 @@ async function removerEvidencia(tarefaId, idx) {
 }
 
 /**
- * Alterna itens simples (tipo check)
+ * Funçao antiga `toggleItemSimples` removida, pois o salvamento é feito via submit do formulário principal.
  */
-async function toggleItemSimples(tarefaId, idx, checkbox) {
-    const fd = new FormData();
-    fd.append('tarefa_id', tarefaId);
-    fd.append('index', idx);
-    fd.append('acao', 'toggle');
-    fd.append('feito', checkbox.checked);
-
-    try {
-        await fetch('../api/tarefa_checklist_toggle.php', { method: 'POST', body: fd });
-        // Atualiza estilo visualmente sem recarregar tudo, para agilidade
-        const itemDiv = checkbox.closest('.checklist-rich-item');
-        if(checkbox.checked) itemDiv.classList.add('done');
-        else itemDiv.classList.remove('done');
-    } catch (e) { console.error(e); alert("Erro ao sincronizar."); }
-}
+// async function toggleItemSimples...
 
 /**
  * Recarrega os dados da tarefa para atualizar a view do checklist
  */
 async function atualizarContextoTarefa(id) {
+    // A tarefa_buscar.php precisa retornar o campo 'feedback_revisao'
     const resp = await fetch(`../api/tarefa_buscar.php?id=${id}`);
     const json = await resp.json();
     if(json.ok) {
         tarefaAtualContexto = json.tarefa;
-        renderizarChecklistRico(json.tarefa.checklist, id);
+        abrirModalExecucao(json.tarefa); // Reabre o modal com os novos dados
     }
 }
 
@@ -302,8 +323,30 @@ document.getElementById('formEntrega').addEventListener('submit', async function
     btn.disabled = true; 
     btn.innerText = "Processando...";
 
+    // --- NOVO: ANEXA CHECKLISTS AO FORM DATA ---
+    // Move os inputs do checklist (checkboxes) para o FormData
+    const formContainer = document.getElementById('checklistFormContainer');
+    if (formContainer) {
+        // Encontra todos os checkboxes com o name="checklist_done[]" dentro do container
+        const checklistInputs = formContainer.querySelectorAll('input[name="checklist_done[]"]');
+        
+        checklistInputs.forEach(input => {
+            // Apenas adiciona ao FormData se estiver checado.
+            // O PHP saberá que a ausência do índice significa que não foi marcado.
+            if (input.checked) {
+                // Adiciona o valor do checkbox (que é o índice do item) ao FormData
+                formData.append('checklist_done[]', input.value); 
+            }
+        });
+    }
+    // --- FIM NOVO BLOCO ---
+    
     try {
-        const formData = new FormData(this);
+        const formData = new FormData(this); // Refeito aqui para incluir checklist
+        
+        // Se a lógica do checklist não foi incluída acima, mova para cá e adicione novamente.
+        // Já que a lógica foi colocada no Listener, usamos o FormData que foi criado logo após.
+        
         const resp = await fetch('../api/tarefa_entregar.php', { method: 'POST', body: formData });
         const json = await resp.json();
 

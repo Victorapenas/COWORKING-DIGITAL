@@ -669,6 +669,7 @@ $isColab = ($papel == 'FUNCIONARIO' || $papel == 'COLABORADOR');
                     if (h > 0) return `${h}h ${m}m`;
                     return `${m}m`;
                 }
+            }
         </script>
     <?php endif; ?>
 </body>

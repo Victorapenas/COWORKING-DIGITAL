@@ -1,5 +1,4 @@
 <?php
-//atualização
 // ARQUIVO: api/dashboard_stats.php
 
 // 1. Blindagem de Erros (Evita que Warnings quebrem o JSON)
@@ -26,30 +25,33 @@ try {
         'papel' => $papel,
         'usuario_nome' => $sessao['nome'],
         'kpis' => [],
-        'listas' => [],
-        'minhas_tarefas' => [],
-        'meus_projetos' => [],
-        'pendencias' => [], 
+        'listas' => [],        // Usado pelo Gestor (Projetos/Equipe)
+        'minhas_tarefas' => [], // Usado pelo Colaborador (Lista de Foco)
+        'meus_projetos' => [],  // Usado pelo Colaborador (Lateral)
+        'pendencias' => [],     // Usado pelo Gestor (Aprovações)
         'online_users' => [],
         'grafico' => []
     ];
 
-    // --- 1. BUSCA TAREFAS PESSOAIS (Para todos) ---
-    // ATUALIZAÇÃO IMPORTANTE: Incluídos checklist, descricao e tempo para o novo painel
-    $sqlMinhas = "SELECT t.id, t.titulo, t.descricao, t.prioridade, t.prazo, t.status, t.checklist, t.tempo_total_minutos, p.nome as projeto_nome
+    // --- 1. BUSCA TAREFAS PESSOAIS (Fundamental para o Colaborador) ---
+    // Trazemos checklist e descrição para o modal lateral abrir instantaneamente
+    $sqlMinhas = "SELECT t.id, t.titulo, t.descricao, t.prioridade, t.prazo, t.status, 
+                         t.checklist, t.tempo_total_minutos, t.progresso,
+                         p.nome as projeto_nome
                   FROM tarefa t 
                   LEFT JOIN projeto p ON t.projeto_id = p.id
                   WHERE t.responsavel_id = ? 
                   AND t.status NOT IN ('CONCLUIDA', 'CANCELADA')
-                  ORDER BY FIELD(t.prioridade, 'URGENTE', 'IMPORTANTE', 'NORMAL'), t.prazo ASC LIMIT 10";
+                  ORDER BY FIELD(t.prioridade, 'URGENTE', 'IMPORTANTE', 'NORMAL'), t.prazo ASC LIMIT 20";
                   
     $stmtM = $pdo->prepare($sqlMinhas);
     $stmtM->execute([$usuarioId]);
     $response['minhas_tarefas'] = $stmtM->fetchAll(PDO::FETCH_ASSOC);
 
-    // --- 2. LÓGICA POR CARGO ---
+    // --- 2. LÓGICA DE VISUALIZAÇÃO POR CARGO ---
+
     if ($papel === 'DONO' || $papel === 'LIDER') {
-        // VISÃO MACRO (Mantida igual)
+        // === VISÃO DE DONO ===
         $response['kpis'] = [
             ['titulo' => 'Projetos Ativos', 'valor' => $pdo->query("SELECT COUNT(*) FROM projeto WHERE empresa_id = $empresaId AND status = 'EM_ANDAMENTO'")->fetchColumn(), 'icone' => 'rocket', 'cor' => 'blue'],
             ['titulo' => 'Equipe Online', 'valor' => $pdo->query("SELECT COUNT(*) FROM usuario WHERE empresa_id = $empresaId AND ativo=1 AND ultima_atividade > (NOW() - INTERVAL 10 MINUTE)")->fetchColumn(), 'icone' => 'users', 'cor' => 'green'],
@@ -57,7 +59,7 @@ try {
             ['titulo' => 'Tarefas Feitas', 'valor' => $pdo->query("SELECT COUNT(*) FROM tarefa WHERE empresa_id = $empresaId AND status = 'CONCLUIDA' AND MONTH(concluida_em) = MONTH(CURRENT_DATE())")->fetchColumn(), 'icone' => 'check', 'cor' => 'purple']
         ];
 
-        // Projetos Globais
+        // Lista de Projetos com Barra de Progresso
         $sqlProjetos = "
             SELECT p.id, p.nome, p.status, p.cliente_nome,
             (SELECT COUNT(*) FROM tarefa t WHERE t.projeto_id = p.id) as total_tarefas,
@@ -81,7 +83,7 @@ try {
         ")->fetchAll(PDO::FETCH_ASSOC);
 
     } elseif ($papel === 'GESTOR') {
-        // VISÃO GESTOR (Mantida igual)
+        // === VISÃO DE GESTOR ===
         $response['kpis'] = [
             ['titulo' => 'Meus Projetos', 'valor' => $pdo->query("SELECT COUNT(*) FROM projeto WHERE gestor_id = $usuarioId AND status = 'EM_ANDAMENTO'")->fetchColumn(), 'icone' => 'pasta', 'cor' => 'blue'],
             ['titulo' => 'Para Aprovar', 'valor' => $pdo->query("SELECT COUNT(*) FROM tarefa t JOIN projeto p ON t.projeto_id = p.id WHERE p.gestor_id = $usuarioId AND t.status = 'EM_REVISAO'")->fetchColumn(), 'icone' => 'olho', 'cor' => 'red'], 
@@ -103,14 +105,15 @@ try {
         ")->fetchAll(PDO::FETCH_ASSOC);
 
     } else {
-        // VISÃO COLABORADOR (Atualizada para o novo painel)
+        // === VISÃO DE COLABORADOR (OPERACIONAL) ===
+        // KPIs focados em produtividade pessoal
         $response['kpis'] = [
-            ['titulo' => 'A Fazer', 'valor' => count($response['minhas_tarefas']), 'icone' => 'task', 'valor_classe' => 'text-primary', 'icone' => 'check'],
-            ['titulo' => 'Entregues (Mês)', 'valor' => $pdo->query("SELECT COUNT(*) FROM tarefa WHERE responsavel_id = $usuarioId AND status = 'CONCLUIDA' AND MONTH(concluida_em) = MONTH(CURRENT_DATE())")->fetchColumn(), 'icone' => 'check'],
-            ['titulo' => 'Urgentes', 'valor' => $pdo->query("SELECT COUNT(*) FROM tarefa WHERE responsavel_id = $usuarioId AND status != 'CONCLUIDA' AND prioridade = 'URGENTE'")->fetchColumn(), 'icone' => 'alerta']
+            ['titulo' => 'A Fazer', 'valor' => count($response['minhas_tarefas']), 'icone' => 'task', 'cor' => 'blue'],
+            ['titulo' => 'Entregues (Mês)', 'valor' => $pdo->query("SELECT COUNT(*) FROM tarefa WHERE responsavel_id = $usuarioId AND status = 'CONCLUIDA' AND MONTH(concluida_em) = MONTH(CURRENT_DATE())")->fetchColumn(), 'icone' => 'check', 'cor' => 'green'],
+            ['titulo' => 'Urgentes', 'valor' => $pdo->query("SELECT COUNT(*) FROM tarefa WHERE responsavel_id = $usuarioId AND status != 'CONCLUIDA' AND prioridade = 'URGENTE'")->fetchColumn(), 'icone' => 'alerta', 'cor' => 'red']
         ];
         
-        // NOVO: Busca projetos onde o colaborador é membro da equipe vinculada
+        // Busca projetos onde o colaborador é membro (para a barra lateral)
         $sqlMeusProjetos = "SELECT DISTINCT p.id, p.nome 
                             FROM projeto p
                             JOIN projeto_equipe pe ON p.id = pe.projeto_id
@@ -121,11 +124,11 @@ try {
         $stmtMP->execute([$usuarioId]);
         $response['meus_projetos'] = $stmtMP->fetchAll(PDO::FETCH_ASSOC);
         
-        // A lista principal é a mesma de minhas tarefas para o dashboard operacional
-        $response['listas'] = $response['minhas_tarefas'];
+        // O colaborador não usa $response['listas'], ele usa $response['minhas_tarefas'] diretamente no JS
     }
 
-    // --- 3. GRÁFICO ---
+    // --- 3. GRÁFICO (PARA GESTORES/DONOS) ---
+    // Se for colaborador, o gráfico pode ser omitido ou mostrar performance pessoal
     $filtroGrafico = ($papel === 'COLABORADOR' || $papel === 'FUNCIONARIO') ? "AND responsavel_id = $usuarioId" : "";
     
     $grafico = [];

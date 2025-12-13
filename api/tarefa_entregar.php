@@ -1,5 +1,4 @@
 <?php
-//atualização
 // ARQUIVO: api/tarefa_entregar.php
 ob_start();
 header("Content-Type: application/json; charset=UTF-8");
@@ -13,13 +12,13 @@ try {
     $sessao = $_SESSION[SESSAO_USUARIO_KEY];
     $pdo = conectar_db();
 
-    // Recebe dados
+    // Recebe dados do POST
     $tarefaId = (int)($_POST['tarefa_id'] ?? 0);
     $status = $_POST['status'] ?? '';
     $progresso = isset($_POST['progresso']) ? (int)$_POST['progresso'] : -1;
     $comentario = trim($_POST['comentario'] ?? '');
     
-    // NOVO: Recebe o tempo total gasto em minutos
+    // NOVO: Recebe o tempo total gasto em minutos (vindo do cronômetro)
     $tempoGasto = isset($_POST['tempo_gasto']) ? (int)$_POST['tempo_gasto'] : -1;
 
     if (!$tarefaId) throw new Exception("Tarefa não identificada.");
@@ -89,8 +88,9 @@ try {
 
     // 4. Registra no Histórico (Comentários)
     // Se houve arquivo ou comentário, salva na tabela de comentários
-    if ($comentario || $caminhoArquivo) {
+    if ($comentario || $caminhoArquivo || $status) {
         $msgFinal = $comentario;
+        
         if ($caminhoArquivo) {
             // Adiciona link do arquivo no texto do comentário (formato simples)
             $msgFinal .= "\n\n[ARQUIVO_ANEXO]:$caminhoArquivo:$nomeOriginal";

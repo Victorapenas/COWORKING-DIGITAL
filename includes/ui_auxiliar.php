@@ -1,34 +1,21 @@
 <?php
-//atualização
 // ARQUIVO: includes/ui_auxiliar.php
-require_once __DIR__ . '/funcoes.php';
+require_once __DIR__ . '/funcoes.php'; 
 
-// =============================================================================
-// RENDERIZA A SIDEBAR COMPLETA (DINÂMICA)
-// =============================================================================
-function renderizar_sidebar()
-{
+function renderizar_sidebar(){
     $paginaAtual = basename($_SERVER['PHP_SELF']);
     
-    // Verifica papel para aplicar tema azul e restrições
+    // Verifica papel e tema
     $sessao = $_SESSION[SESSAO_USUARIO_KEY] ?? [];
     $papel = $sessao['papel'] ?? 'FUNCIONARIO';
     
-    // Define se é colaborador (para aplicar tema azul)
+    // Define se é colaborador (para aplicar tema azul e esconder menus)
     $isColab = ($papel == 'FUNCIONARIO' || $papel == 'COLABORADOR');
-    
-    // Define classes CSS dinâmicas
-    $classesSidebar = 'sidebar';
-    if ($isColab) {
-        $classesSidebar .= ' theme-blue';
-    }
-    if ($papel === 'GESTOR') {
-        $classesSidebar .= ' sidebar-gestor';
-    }
+    $classeTema = $isColab ? 'theme-blue' : '';
     
     // --- Lógica para buscar Logo e Nome do Cliente ---
     $logoClienteUrl = null;
-    $nomeEmpresa = "Minha Empresa"; // Fallback padrão
+    $nomeEmpresa = "Visão Geral";
     
     if (isset($sessao['empresa_id'])) {
         try {
@@ -38,7 +25,6 @@ function renderizar_sidebar()
             $empresa = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($empresa) {
                 $nomeEmpresa = $empresa['nome'];
-                // Verifica arquivo físico
                 if (!empty($empresa['logo_url']) && file_exists(__DIR__ . '/../public/' . $empresa['logo_url'])) {
                     $logoClienteUrl = '../public/' . $empresa['logo_url'];
                 }
@@ -47,8 +33,8 @@ function renderizar_sidebar()
     }
     ?>
     
-    <div class="<?= $classesSidebar ?>">
-
+    <div class="sidebar <?= $classeTema ?>">
+        
         <div class="sidebar-header">
             <div class="client-logo-wrapper">
                 <?php if ($logoClienteUrl): ?>
@@ -59,7 +45,7 @@ function renderizar_sidebar()
                     </span>
                 <?php endif; ?>
             </div>
-
+            
             <div class="client-name-text">
                 <?= htmlspecialchars($nomeEmpresa) ?>
             </div>
@@ -86,8 +72,7 @@ function renderizar_sidebar()
                 <?= getIcone('pasta') ?> Projetos
             </a>
 
-            <a href="minhas_tarefas.php"
-                class="nav-item <?= (strpos($paginaAtual, 'tarefa') !== false && strpos($paginaAtual, 'projeto') === false) ? 'active' : '' ?>">
+            <a href="minhas_tarefas.php" class="nav-item <?= (strpos($paginaAtual, 'tarefa') !== false && strpos($paginaAtual, 'projeto') === false) ? 'active' : '' ?>">
                 <?= getIcone('task') ?> Minhas Tarefas
             </a>
 
@@ -116,31 +101,20 @@ function renderizar_sidebar()
         </div>
 
         <div class="sidebar-footer">
-            <?php
-            $nomeUsuarioFooter = htmlspecialchars($_SESSION[SESSAO_USUARIO_KEY]['nome'] ?? 'Usuário');
+            <?php 
+                $logoSys = '../imgs/logo coworking.png';
+                if (!file_exists(__DIR__ . '/../imgs/logo coworking.png')) {
+                    $logoSys = '../css/coworking_digital.svg';
+                }
             ?>
-            <div style="
-                background: rgba(255,255,255,0.5); 
-                padding: 12px 15px; 
-                border-radius: 12px; 
-                border: 1px solid rgba(0,0,0,0.05);
-                color: inherit; 
-                font-weight: 700; 
-                font-size: 0.9rem;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-            ">
-                <div style="width: 10px; height: 10px; background: #2ecc71; border-radius: 50%;"></div>
-                <?= $nomeUsuarioFooter ?>
-            </div>
+            <img src="<?= $logoSys ?>" alt="Sistema Coworking" class="system-logo-img">
         </div>
 
     </div>
     <script>
         function logoutSistema() {
-            if (confirm('Deseja realmente sair do sistema?')) {
+            if(confirm('Deseja realmente sair do sistema?')) {
+                // Efeito visual de carregamento
                 document.body.style.cursor = 'wait';
                 fetch('../api/logout.php', { method: 'POST' })
                     .then(() => window.location.href = 'login.php')
@@ -151,13 +125,7 @@ function renderizar_sidebar()
     <?php
 }
 
-// =============================================================================
-// OUTRAS FUNÇÕES DE UI
-// =============================================================================
-
-function renderizar_painel_info()
-{
-    // Ícones decorativos em SVG direto para evitar dependência de arquivos externos
+function renderizar_painel_info() {
     $icones = [
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>',
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V8h12v3z"/></svg>',
@@ -177,28 +145,25 @@ function renderizar_painel_info()
     <?php
 }
 
-function renderizar_logo()
-{
-    // Usa a logo SVG se existir, senão usa uma imagem PNG
-    $logoSistema = '../css/coworking_digital.svg';
-    if (!file_exists(__DIR__ . '/../css/coworking_digital.svg') || filesize(__DIR__ . '/../css/coworking_digital.svg') < 10) {
-        // Fallback se o SVG estiver vazio ou não existir
-        $logoSistema = '../imgs/logo coworking.png';
+function renderizar_logo() {
+    $logoSistema = '../imgs/logo coworking.png'; 
+    if (!file_exists(__DIR__ . '/../imgs/logo coworking.png')) {
+        $logoSistema = '../css/coworking_digital.svg';
     }
     ?>
     <div class="logo-box">
-        <img src="<?= $logoSistema ?>" alt="Coworking Digital" class="logo-sistema-img" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<h2 style=\'color:#6A66FF\'>Coworking</h2>')">
+        <img src="<?= $logoSistema ?>" alt="Coworking Digital" class="logo-sistema-img">
     </div>
     <?php
 }
 
-function renderizar_topo_personalizado()
-{
+function renderizar_topo_personalizado() {
     $nomeUsuario = htmlspecialchars($_SESSION[SESSAO_USUARIO_KEY]['nome'] ?? 'Usuário');
     $iniciais = strtoupper(substr($nomeUsuario, 0, 2));
     ?>
     <div class="topbar">
-        <div></div>
+        <div></div> 
+
         <div class="profile">
             <div style="text-align:right; font-size:0.85rem; color:#666; margin-right:10px;">
                 Olá, <strong><?= $nomeUsuario ?></strong>

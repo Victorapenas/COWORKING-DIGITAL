@@ -831,7 +831,8 @@ body {
     width: 18px;
     height: 18px;
     cursor: pointer;
-    accent-color: var(--primary); /* Cor da marca */
+    accent-color: var(--primary);
+    /* Cor da marca */
 }
 
 /* --- ESTILO DO DROPDOWN CUSTOMIZADO (Usado em Projetos/Equipes) --- */
@@ -1246,7 +1247,7 @@ input[type="file"]:hover {
 .sidebar.theme-blue .client-name-text,
 .sidebar.theme-blue .client-logo-wrapper {
     color: white;
-    border-color: rgba(255,255,255,0.3);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Timer Flutuante (Estilo) */
@@ -1262,13 +1263,23 @@ input[type="file"]:hover {
     align-items: center;
     gap: 5px;
 }
+
 .timer-running {
     animation: pulse 1s infinite;
 }
+
 @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.7; }
-    100% { opacity: 1; }
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
 /* Modal de Execução */
@@ -1293,7 +1304,8 @@ input[type="file"]:hover {
 
 .main-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr; /* Esquerda larga, Direita estreita */
+    grid-template-columns: 2fr 1fr;
+    /* Esquerda larga, Direita estreita */
     gap: 30px;
     align-items: start;
 }
@@ -1339,12 +1351,14 @@ input[type="file"]:hover {
     background: white;
     border-radius: 0 0 16px 16px;
     box-shadow: var(--shadow-card);
-    overflow: hidden; /* Para os cantos arredondados */
+    overflow: hidden;
+    /* Para os cantos arredondados */
 }
 
 /* Ajuste dos itens da lista */
 .project-item {
-    padding: 20px 25px !important; /* Mais espaçamento */
+    padding: 20px 25px !important;
+    /* Mais espaçamento */
     border-bottom: 1px solid #f4f4f4 !important;
     transition: background 0.2s;
 }
@@ -1365,6 +1379,7 @@ input[type="file"]:hover {
     box-shadow: var(--shadow-card);
     border: 1px solid #f0f0f0;
 }
+
 /* Checklist Rico e Bonito */
 .checklist-rich-item {
     background: #fff;
@@ -1377,7 +1392,7 @@ input[type="file"]:hover {
 }
 
 .checklist-rich-item:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     border-color: #ccc;
     border-left-color: #6A66FF;
 }
@@ -1411,7 +1426,8 @@ input[type="file"]:hover {
 .chk-actions {
     display: flex;
     gap: 10px;
-    padding-left: 34px; /* Alinha com o texto, pulando o checkbox */
+    padding-left: 34px;
+    /* Alinha com o texto, pulando o checkbox */
 }
 
 .btn-chk-action {
@@ -1474,7 +1490,10 @@ input[type="file"]:hover {
     margin-left: 10px;
     font-size: 1.1rem;
 }
-.chk-evidence-box button:hover { color: #d32f2f; }
+
+.chk-evidence-box button:hover {
+    color: #d32f2f;
+}
 
 /* Custom Checkbox Redondo */
 .custom-chk {
@@ -1484,6 +1503,7 @@ input[type="file"]:hover {
     cursor: pointer;
     user-select: none;
 }
+
 .custom-chk input {
     position: absolute;
     opacity: 0;
@@ -1491,6 +1511,7 @@ input[type="file"]:hover {
     height: 0;
     width: 0;
 }
+
 .chk-checkmark {
     position: absolute;
     top: 0;
@@ -1502,21 +1523,26 @@ input[type="file"]:hover {
     border-radius: 50%;
     transition: 0.2s;
 }
-.custom-chk:hover input ~ .chk-checkmark {
+
+.custom-chk:hover input~.chk-checkmark {
     border-color: #6A66FF;
 }
-.custom-chk input:checked ~ .chk-checkmark {
+
+.custom-chk input:checked~.chk-checkmark {
     background-color: #05cd99;
     border-color: #05cd99;
 }
+
 .chk-checkmark:after {
     content: "";
     position: absolute;
     display: none;
 }
-.custom-chk input:checked ~ .chk-checkmark:after {
+
+.custom-chk input:checked~.chk-checkmark:after {
     display: block;
 }
+
 .custom-chk .chk-checkmark:after {
     left: 7px;
     top: 3px;
@@ -1526,6 +1552,7 @@ input[type="file"]:hover {
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
 }
+
 /* CSS PARA CHECKLIST AVANÇADO */
 .checklist-rich-item {
     background: #fff;
@@ -1538,6 +1565,7 @@ input[type="file"]:hover {
     gap: 10px;
     border-left: 4px solid #ccc;
 }
+
 .checklist-rich-item.done {
     border-left-color: #05cd99;
     background: #fdfdfd;
@@ -1548,6 +1576,7 @@ input[type="file"]:hover {
     gap: 10px;
     align-items: center;
 }
+
 .chk-index {
     background: #eee;
     color: #555;
@@ -1560,14 +1589,17 @@ input[type="file"]:hover {
     font-size: 0.75rem;
     font-weight: bold;
 }
+
 .chk-texts {
     display: flex;
     flex-direction: column;
 }
+
 .chk-desc {
     font-weight: 600;
     color: #333;
 }
+
 .chk-type-badge {
     font-size: 0.65rem;
     background: #e3f2fd;
@@ -1591,6 +1623,7 @@ input[type="file"]:hover {
     text-align: center;
     transition: 0.2s;
 }
+
 .btn-upload-req:hover {
     background: #4318FF;
     color: white;
@@ -1600,12 +1633,14 @@ input[type="file"]:hover {
     display: flex;
     gap: 5px;
 }
+
 .input-link-req {
     flex: 1;
     padding: 6px;
     border: 1px solid #ddd;
     border-radius: 4px;
 }
+
 .btn-save-link {
     background: #2b3674;
     color: white;
@@ -1623,6 +1658,7 @@ input[type="file"]:hover {
     justify-content: space-between;
     align-items: center;
 }
+
 .link-evidencia {
     text-decoration: none;
     color: #2e7d32;
@@ -1631,6 +1667,7 @@ input[type="file"]:hover {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 .btn-remove-evidencia {
     background: none;
     border: none;
@@ -1638,4 +1675,68 @@ input[type="file"]:hover {
     font-size: 1.2rem;
     cursor: pointer;
 }
-.btn-remove-evidencia:hover { color: #d32f2f; }
+
+.btn-remove-evidencia:hover {
+    color: #d32f2f;
+}
+
+/* =============================================================================
+   4. TEMA AZUL (COLABORADORES)
+   ============================================================================= */
+.sidebar.theme-blue {
+    background: var(--primary);
+    border-right: none;
+}
+
+.sidebar.theme-blue .sidebar-header {
+    background: transparent;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar.theme-blue .client-name-text {
+    color: white;
+}
+
+.sidebar.theme-blue .nav-title {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.sidebar.theme-blue .nav-item {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.sidebar.theme-blue .nav-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    transform: translateX(5px);
+}
+
+.sidebar.theme-blue .nav-item.active {
+    background: white;
+    color: var(--primary);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar.theme-blue .separator {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar.theme-blue .sidebar-footer {
+    background: transparent;
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* User Badge no Theme Blue */
+.sidebar.theme-blue .sidebar-footer>div {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.sidebar.theme-blue .sidebar-footer>div>div:first-child {
+    background: white !important;
+    color: var(--primary) !important;
+}
+
+.sidebar.theme-blue .sidebar-footer>div>div:last-child {
+    color: white !important;
+}

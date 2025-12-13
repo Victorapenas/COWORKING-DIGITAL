@@ -153,3 +153,18 @@ Sempre verificar se a constante já está definida antes de usá-la em novas fea
 3. **Encoding**: Banco usa `utf8mb4`, sempre verificar em novas queries
 4. **Senhas**: Nunca logar, armazenar ou retornar senhas em plain text
 5. **Expiração**: Tokens têm expiração em minutos, sempre verificar `expira_em > NOW()` nas queries
+
+
+
+banco 12/12/2025
+
+-- 1. Ensure the new status exists in the ENUM
+ALTER TABLE `tarefa` 
+MODIFY COLUMN `status` ENUM('PENDENTE','EM_ANDAMENTO','EM_REVISAO','CONCLUIDA','CANCELADA') DEFAULT 'PENDENTE';
+
+-- 2. Add a column for rejection feedback (if the manager returns the task)
+ALTER TABLE `tarefa`
+ADD COLUMN `feedback_revisao` TEXT DEFAULT NULL AFTER `checklist`;
+
+-- 3. (Optional but recommended) Ensure checklist is TEXT or LONGTEXT to store JSON with file paths
+ALTER TABLE `tarefa` MODIFY COLUMN `checklist` LONGTEXT;

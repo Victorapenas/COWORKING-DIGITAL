@@ -12,72 +12,84 @@ try {
     $sessao = $_SESSION[SESSAO_USUARIO_KEY];
     $pdo = conectar_db();
 
-    // Recebe dados do POST
+    // Recebe dados
     $tarefaId = (int)($_POST['tarefa_id'] ?? 0);
-    $status = $_POST['status'] ?? '';
+    $statusSolicitado = $_POST['status'] ?? '';
     $progresso = isset($_POST['progresso']) ? (int)$_POST['progresso'] : -1;
     $comentario = trim($_POST['comentario'] ?? '');
+    $feedback = trim($_POST['feedback_revisao'] ?? ''); // Novo campo para gestor
     
-    // NOVO: Recebe o tempo total gasto em minutos (vindo do cronômetro)
-    $tempoGasto = isset($_POST['tempo_gasto']) ? (int)$_POST['tempo_gasto'] : -1;
-
     if (!$tarefaId) throw new Exception("Tarefa não identificada.");
 
-    // 1. Verifica se a tarefa pertence ao usuário ou se é gestor
-    $stmt = $pdo->prepare("SELECT responsavel_id, projeto_id FROM tarefa WHERE id = ?");
+    // 1. Verifica permissões e dados atuais
+    $stmt = $pdo->prepare("SELECT responsavel_id, projeto_id, status FROM tarefa WHERE id = ?");
     $stmt->execute([$tarefaId]);
     $tarefa = $stmt->fetch();
 
     if (!$tarefa) throw new Exception("Tarefa não encontrada.");
     
-    // Permissão: Só quem é responsável ou Gestor/Dono pode entregar
     $isResp = ($tarefa['responsavel_id'] == $sessao['id']);
     $isGestor = in_array($sessao['papel'], ['DONO', 'LIDER', 'GESTOR']);
 
     if (!$isResp && !$isGestor) {
-        throw new Exception("Você não é o responsável por esta tarefa.");
+        throw new Exception("Sem permissão para alterar esta tarefa.");
     }
 
-    // 2. Upload de Arquivo (Entrega)
+    // 2. LÓGICA DE STATUS RESTRITA
+    $novoStatus = $statusSolicitado;
+
+    // REGRA 1: Colaborador Tenta Concluir -> Vira "EM_REVISAO"
+    if (!$isGestor && $statusSolicitado === 'CONCLUIDA') {
+        $novoStatus = 'EM_REVISAO';
+        $progresso = 99; // Visualmente quase lá
+    }
+
+    // REGRA 2: Apenas Gestor pode definir CONCLUIDA
+    if ($statusSolicitado === 'CONCLUIDA' && !$isGestor) {
+        throw new Exception("Apenas gestores podem aprovar e concluir tarefas.");
+    }
+
+    // REGRA 3: Se Gestor devolve (Pendente/Andamento), pode salvar feedback
+    // (Lógica aplicada no update abaixo)
+
+    // 3. Upload de Arquivo (Geral da Tarefa)
     $caminhoArquivo = null;
     $nomeOriginal = null;
-
     if (isset($_FILES['arquivo_entrega']) && $_FILES['arquivo_entrega']['error'] === 0) {
         $uploadDir = __DIR__ . '/../public/uploads/entregas/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-
+        
         $ext = pathinfo($_FILES['arquivo_entrega']['name'], PATHINFO_EXTENSION);
         $nomeOriginal = $_FILES['arquivo_entrega']['name'];
         $novoNome = 'entrega_' . $tarefaId . '_' . uniqid() . '.' . $ext;
-
+        
         if (move_uploaded_file($_FILES['arquivo_entrega']['tmp_name'], $uploadDir . $novoNome)) {
             $caminhoArquivo = 'uploads/entregas/' . $novoNome;
         }
     }
 
-    // 3. Atualiza Status, Progresso E TEMPO na Tarefa Principal
+    // 4. Update no Banco
     $sqlUp = "UPDATE tarefa SET atualizado_em = NOW()";
     $paramsUp = [];
 
-    if ($status) {
+    if ($novoStatus) {
         $sqlUp .= ", status = ?";
-        $paramsUp[] = $status;
+        $paramsUp[] = $novoStatus;
         
-        // Se concluiu, define data de conclusão e 100%
-        if ($status === 'CONCLUIDA') {
-            $sqlUp .= ", concluida_em = NOW(), progresso = 100";
+        if ($novoStatus === 'CONCLUIDA') {
+            $sqlUp .= ", concluida_em = NOW(), progresso = 100, feedback_revisao = NULL"; // Limpa feedback antigo se aprovou
         }
     }
     
-    if ($progresso >= 0 && $status !== 'CONCLUIDA') {
+    if ($progresso >= 0 && $novoStatus !== 'CONCLUIDA') {
         $sqlUp .= ", progresso = ?";
         $paramsUp[] = $progresso;
     }
 
-    // NOVO: Atualiza o tempo total se foi enviado
-    if ($tempoGasto >= 0) {
-        $sqlUp .= ", tempo_total_minutos = ?";
-        $paramsUp[] = $tempoGasto;
+    // Se Gestor está devolvendo, salva o feedback
+    if ($isGestor && ($novoStatus == 'PENDENTE' || $novoStatus == 'EM_ANDAMENTO') && !empty($feedback)) {
+        $sqlUp .= ", feedback_revisao = ?";
+        $paramsUp[] = $feedback;
     }
 
     $sqlUp .= " WHERE id = ?";
@@ -86,29 +98,29 @@ try {
     $stmtUp = $pdo->prepare($sqlUp);
     $stmtUp->execute($paramsUp);
 
-    // 4. Registra no Histórico (Comentários)
-    // Se houve arquivo ou comentário, salva na tabela de comentários
-    if ($comentario || $caminhoArquivo || $status) {
-        $msgFinal = $comentario;
-        
-        if ($caminhoArquivo) {
-            // Adiciona link do arquivo no texto do comentário (formato simples)
-            $msgFinal .= "\n\n[ARQUIVO_ANEXO]:$caminhoArquivo:$nomeOriginal";
-        }
-        
-        // Se mudou status, registra
-        if ($status) {
-            $statusLabel = str_replace('_', ' ', $status);
-            $msgFinal = "[Mudou status para: $statusLabel] " . $msgFinal;
-        }
-
-        if (!empty(trim($msgFinal))) {
-            $stmtCom = $pdo->prepare("INSERT INTO comentario_tarefa (tarefa_id, usuario_id, mensagem, criado_em) VALUES (?, ?, ?, NOW())");
-            $stmtCom->execute([$tarefaId, $sessao['id'], trim($msgFinal)]);
-        }
+    // 5. Histórico (Comentários)
+    $msgFinal = $comentario;
+    
+    if ($caminhoArquivo) {
+        $msgFinal .= "\n\n[ARQUIVO_ANEXO]:$caminhoArquivo:$nomeOriginal";
+    }
+    
+    if ($novoStatus && $novoStatus !== $tarefa['status']) {
+        $label = str_replace('_', ' ', $novoStatus);
+        if ($novoStatus == 'EM_REVISAO') $msgFinal = "🚀 Enviou para revisão. " . $msgFinal;
+        if ($novoStatus == 'CONCLUIDA') $msgFinal = "✅ Aprovou e concluiu a tarefa. " . $msgFinal;
+        if ($novoStatus == 'EM_ANDAMENTO' && $tarefa['status'] == 'EM_REVISAO') $msgFinal = "⚠️ Devolveu para ajustes. " . $msgFinal;
     }
 
-    echo json_encode(['ok' => true, 'mensagem' => 'Atualização enviada com sucesso!']);
+    if (!empty(trim($msgFinal)) || !empty($feedback)) {
+        // Se tiver feedback de revisão, adiciona no comentário também para histórico
+        if(!empty($feedback)) $msgFinal .= "\n\n[FEEDBACK DO GESTOR]: " . $feedback;
+
+        $stmtCom = $pdo->prepare("INSERT INTO comentario_tarefa (tarefa_id, usuario_id, mensagem, criado_em) VALUES (?, ?, ?, NOW())");
+        $stmtCom->execute([$tarefaId, $sessao['id'], trim($msgFinal)]);
+    }
+
+    echo json_encode(['ok' => true, 'mensagem' => 'Atualizado com sucesso.', 'novo_status' => $novoStatus]);
 
 } catch (Exception $e) {
     http_response_code(400);

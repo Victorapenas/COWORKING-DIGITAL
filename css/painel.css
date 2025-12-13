@@ -748,3 +748,29 @@ input[type="file"]:hover { background: #e3f2fd !important; }
     background: var(--danger);
     color: white;
 }
+/* ARQUIVO: css/painel.css */
+
+/* Checklist na criação (Gestor) */
+.checklist-item {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+    background: #fff;
+    padding: 5px;
+    border-radius: 8px;
+}
+
+/* Checklist na execução (Colaborador) */
+.check-tarefa {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary); /* Cor da marca */
+}
+
+/* Modal de Execução */
+#execChecklistArea h4 {
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 8px;
+}

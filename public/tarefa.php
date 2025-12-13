@@ -177,6 +177,13 @@ $listaMembrosContexto = isset($membrosProjeto) ? $membrosProjeto : [];
         }
     }
 
+    window.resetChecklist = function() {
+        const container = document.getElementById('checklist-itens-container');
+        if (container) {
+            container.innerHTML = ''; // Limpa todo o conteúdo
+        }
+    }
+
     // Submit
     window.handleTarefaSubmit = async function(e) {
         e.preventDefault();

@@ -208,7 +208,7 @@ $projJson = htmlspecialchars(json_encode($proj), ENT_QUOTES, 'UTF-8');
                                             <span class="st-badge prioridade-<?= strtolower($tarefa['prioridade']); ?>"><?= htmlspecialchars($tarefa['prioridade']); ?></span>
                                             <span class="st-badge <?= $statusClass; ?>"><?= statusTarefaLabel($tarefa['status']); ?></span>
 
-                                            <?php if ($pode_editar || $tarefa['responsavel_id'] == $usuario['id']): ?>
+                                            <?php if ($pode_editar): ?>
                                                 <button class="btn-icone" title="Editar Tarefa" onclick="openTarefaModal(<?php echo $proj['id']; ?>, <?php echo $tarefa['id']; ?>);">
                                                     <?= getIcone('editar'); ?>
                                                 </button>

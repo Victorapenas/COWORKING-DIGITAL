@@ -48,7 +48,9 @@ $listaEquipes = listarEquipes($empresaId);
 
         <div class="tabs-header">
             <button class="tab-btn active" onclick="switchMainTab('ativos', this)">Em Andamento</button>
-            <button class="tab-btn" onclick="switchMainTab('arquivados', this)">Arquivados</button>
+            <?php if($pode_editar): ?>
+                <button class="tab-btn" onclick="switchMainTab('arquivados', this)">Arquivados</button>
+            <?php endif; ?>
         </div>
 
         <div id="view-ativos" class="main-tab-content">

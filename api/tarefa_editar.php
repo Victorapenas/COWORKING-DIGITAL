@@ -21,7 +21,6 @@ try {
     $prioridade = $_POST['prioridade'] ?? 'NORMAL';
     $prazo = !empty($_POST['prazo']) ? $_POST['prazo'] : null;
     
-    // CORREÇÃO AQUI
     $status = $_POST['status'] ?? 'PENDENTE';
     if ($status === 'A_FAZER') $status = 'PENDENTE';
 
@@ -35,13 +34,16 @@ try {
     if (function_exists('processarChecklist')) {
         processarChecklist($tarefaId, $_POST, $pdo); 
     }
-    
+    // Checklist
+    $checklistArray = processarChecklist(0, $_POST, $pdo);
+    $checklistJson = empty($checklistArray) ? NULL : json_encode($checklistArray, JSON_UNESCAPED_UNICODE);
+
     $sql = "UPDATE tarefa SET 
-                responsavel_id=?, prioridade=?, titulo=?, descricao=?, prazo=?, status=?, atualizado_em=NOW()
+                responsavel_id=?, prioridade=?, titulo=?, descricao=?, prazo=?, status=?, checklist=?, atualizado_em=NOW()
             WHERE id=?";
             
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$responsavelId, $prioridade, $nome, $descricao, $prazo, $status, $tarefaId]);
+    $stmt->execute([$responsavelId, $prioridade, $nome, $descricao, $prazo, $status, $checklistJson, $tarefaId]);
 
     echo json_encode(['ok' => true, 'mensagem' => 'Tarefa atualizada com sucesso!']);
 

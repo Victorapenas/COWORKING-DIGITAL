@@ -5,17 +5,19 @@ require_once __DIR__ . '/funcoes.php';
 function renderizar_sidebar(){
     $paginaAtual = basename($_SERVER['PHP_SELF']);
     
-    // Verifica papel e tema
+    // --- CONTEXTO DO USUÁRIO ---
     $sessao = $_SESSION[SESSAO_USUARIO_KEY] ?? [];
     $papel = $sessao['papel'] ?? 'FUNCIONARIO';
     
-    // Define se é colaborador (para aplicar tema azul e esconder menus)
+    // Define se é colaborador (para aplicar tema e esconder menus)
     $isColab = ($papel == 'FUNCIONARIO' || $papel == 'COLABORADOR');
+    
+    // Aplica classe CSS 'theme-blue' se for colaborador
     $classeTema = $isColab ? 'theme-blue' : '';
     
-    // --- Lógica para buscar Logo e Nome do Cliente ---
+    // --- LOGO DA EMPRESA ---
     $logoClienteUrl = null;
-    $nomeEmpresa = "Visão Geral";
+    $nomeEmpresa = "Minha Empresa";
     
     if (isset($sessao['empresa_id'])) {
         try {
@@ -114,7 +116,6 @@ function renderizar_sidebar(){
     <script>
         function logoutSistema() {
             if(confirm('Deseja realmente sair do sistema?')) {
-                // Efeito visual de carregamento
                 document.body.style.cursor = 'wait';
                 fetch('../api/logout.php', { method: 'POST' })
                     .then(() => window.location.href = 'login.php')
@@ -124,6 +125,7 @@ function renderizar_sidebar(){
     </script>
     <?php
 }
+
 
 function renderizar_painel_info() {
     $icones = [

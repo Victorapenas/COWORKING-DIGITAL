@@ -14,7 +14,11 @@ const ICONS = {
     olho: `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'></path><circle cx='12' cy='12' r='3'></circle></svg>`,
     task: `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 20h9'></path><path d='M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'></path></svg>`,
     chart: `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><line x1='18' y1='20' x2='18' y2='10'></line><line x1='12' y1='20' x2='12' y2='4'></line><line x1='6' y1='20' x2='6' y2='14'></line></svg>`,
-    clock: `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><polyline points='12 6 12 12 16 14'></polyline></svg>`
+    clock: `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><polyline points='12 6 12 12 16 14'></polyline></svg>`,
+    refresh: `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='23 4 23 10 17 10'></polyline><polyline points='1 20 1 14 7 14'></polyline><path d='M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15'></path></svg>`,
+    link: `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'></path><path d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'></path></svg>`,
+    close: `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><line x1='18' y1='6' x2='6' y2='18'></line><line x1='6' y1='6' x2='18' y2='18'></line></svg>`,
+    hourglass: `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4.5 9h15M6.5 4h11M6.5 20h11M4.5 15h15M4.5 2.5v19M19.5 2.5v19'></path><path d='M4.5 9c0 2.2 1.8 4 4 4s4-1.8 4-4'></path><path d='M12.5 15c0-2.2-1.8-4-4-4s-4 1.8-4 4'></path></svg>` // Ampulheta simplificada
 };
 
 // --- CARREGAMENTO GERAL ---
@@ -22,11 +26,11 @@ async function carregarDashboard() {
     try {
         const resp = await fetch('../api/dashboard_stats.php');
         const data = await resp.json();
-        
+
         if (!data.ok) throw new Error(data.erro);
 
         const userSpan = document.getElementById('userName');
-        if(userSpan) userSpan.innerText = data.usuario_nome;
+        if (userSpan) userSpan.innerText = data.usuario_nome;
 
         if (data.papel === 'COLABORADOR' || data.papel === 'FUNCIONARIO') {
             renderizarDashboardColab(data);
@@ -66,22 +70,22 @@ function renderizarDashboardColab(data) {
         } else {
             lista.innerHTML = data.minhas_tarefas.map(t => {
                 const tJson = JSON.stringify(t).replace(/"/g, '&quot;');
-                
+
                 // Status Visual
                 let statusBadge = '';
                 let rowStyle = '';
-                
-                if(t.status === 'EM_REVISAO') {
-                    statusBadge = `<span style="background:#fff3cd; color:#856404; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold;">⏳ EM REVISÃO</span>`;
+
+                if (t.status === 'EM_REVISAO') {
+                    statusBadge = `<span style="background:#fff3cd; color:#856404; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; display:inline-flex; align-items:center; gap:4px;">${ICONS.clock} EM REVISÃO</span>`;
                     rowStyle = 'opacity: 0.7;';
                 } else if (t.feedback_revisao) {
-                    statusBadge = `<span style="background:#ffebee; color:#c62828; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold;">⚠️ CORREÇÃO</span>`;
+                    statusBadge = `<span style="background:#ffebee; color:#c62828; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; display:inline-flex; align-items:center; gap:4px;">${ICONS.alerta} CORREÇÃO</span>`;
                     rowStyle = 'border-left: 4px solid #c62828;';
                 }
 
                 let pClass = 'tp-normal';
-                if(t.prioridade === 'URGENTE') pClass = 'tp-alta';
-                else if(t.prioridade === 'IMPORTANTE') pClass = 'tp-media';
+                if (t.prioridade === 'URGENTE') pClass = 'tp-alta';
+                else if (t.prioridade === 'IMPORTANTE') pClass = 'tp-media';
 
                 return `
                 <div class="task-row" onclick="abrirPainelTarefa('${tJson}')" style="${rowStyle}">
@@ -112,26 +116,26 @@ let tarefaAtualColab = null;
 function abrirPainelTarefa(tarefaJson) {
     const tarefa = typeof tarefaJson === 'string' ? JSON.parse(tarefaJson) : tarefaJson;
     tarefaAtualColab = tarefa; // Guarda referência global
-    
+
     const modal = document.getElementById('painelLateral');
     const body = document.getElementById('painelLateralBody');
     const footer = document.getElementById('painelLateralFooter');
-    
+
     document.querySelector('.side-overlay').classList.add('open');
     modal.classList.add('open');
 
     // 1. Cabeçalho e Feedback de Erro (se houver)
     let feedbackHtml = '';
-    if(tarefa.feedback_revisao && tarefa.status !== 'EM_REVISAO') {
+    if (tarefa.feedback_revisao && tarefa.status !== 'EM_REVISAO') {
         feedbackHtml = `
         <div style="background:#ffebee; border-left:4px solid #f44336; padding:15px; margin-bottom:20px; border-radius:4px;">
-            <strong style="color:#d32f2f;">⚠️ Correção Solicitada pelo Gestor:</strong>
+            <strong style="color:#d32f2f; display:flex; align-items:center; gap:5px;">${ICONS.alerta} Correção Solicitada pelo Gestor:</strong>
             <p style="margin:5px 0 0; color:#333; font-style:italic;">"${tarefa.feedback_revisao}"</p>
         </div>`;
     }
 
-    let statusHtml = `<span class="task-prio tp-normal">${tarefa.status.replace('_',' ')}</span>`;
-    if(tarefa.status === 'EM_REVISAO') statusHtml = `<span class="task-prio" style="background:#fff3cd; color:#856404;">⏳ EM ANÁLISE</span>`;
+    let statusHtml = `<span class="task-prio tp-normal">${tarefa.status.replace('_', ' ')}</span>`;
+    if (tarefa.status === 'EM_REVISAO') statusHtml = `<span class="task-prio" style="background:#fff3cd; color:#856404; display:inline-flex; align-items:center; gap:5px;">${ICONS.clock} EM ANÁLISE</span>`;
 
     let html = `
         ${feedbackHtml}
@@ -150,31 +154,31 @@ function abrirPainelTarefa(tarefaJson) {
 
     // 2. Checklist com Upload
     let checklist = [];
-    try { checklist = JSON.parse(tarefa.checklist || '[]'); } catch(e){}
+    try { checklist = JSON.parse(tarefa.checklist || '[]'); } catch (e) { }
 
     if (checklist.length > 0) {
         checklist.forEach((item, idx) => {
             const checked = item.concluido == 1 ? 'checked' : '';
             const isReview = (tarefa.status === 'EM_REVISAO');
-            
+
             // Exibe arquivo se já existir
             let fileHtml = '';
-            if(item.arquivo) {
+            if (item.arquivo) {
                 fileHtml = `
                 <div style="margin-top:5px; font-size:0.8rem; display:flex; align-items:center; gap:5px;">
-                    <a href="../public/${item.arquivo.url}" target="_blank" style="color:#0d6efd; text-decoration:none;">
-                        📎 ${item.arquivo.nome}
+                    <a href="../public/${item.arquivo.url}" target="_blank" style="color:#0d6efd; text-decoration:none; display:flex; align-items:center; gap:5px;">
+                        ${ICONS.link} ${item.arquivo.nome}
                     </a>
                     <span style="color:#999; font-size:0.7rem;">(${item.arquivo.data})</span>
                 </div>`;
             }
-            
+
             // Botão de upload (só aparece se não estiver em revisão)
             let uploadBtn = '';
-            if(!isReview) {
+            if (!isReview) {
                 uploadBtn = `
-                <label style="cursor:pointer; color:#666; font-size:0.75rem; border:1px dashed #ccc; padding:2px 8px; border-radius:4px; margin-top:5px; display:inline-block;">
-                    ${item.arquivo ? '🔄 Trocar Arquivo' : '+ Anexar Entrega'}
+                <label style="cursor:pointer; color:#666; font-size:0.75rem; border:1px dashed #ccc; padding:2px 8px; border-radius:4px; margin-top:5px; display:inline-flex; align-items:center; gap:5px;">
+                    ${item.arquivo ? ICONS.refresh + ' Trocar Arquivo' : ICONS.folder + ' Anexar Entrega'}
                     <input type="file" style="display:none;" onchange="uploadArquivoChecklist(${tarefa.id}, ${idx}, this)">
                 </label>`;
             }
@@ -207,8 +211,8 @@ function abrirPainelTarefa(tarefaJson) {
         `;
     } else {
         footer.innerHTML = `
-            <button class="botao-primario" onclick="enviarParaRevisao(${tarefa.id})" style="width:100%; background:#4318FF;">
-                🚀 Finalizar e Enviar para Revisão
+            <button class="botao-primario" onclick="enviarParaRevisao(${tarefa.id})" style="width:100%; background:#4318FF; display:flex; justify-content:center; align-items:center; gap:8px;">
+                ${ICONS.rocket} Finalizar e Enviar para Revisão
             </button>
         `;
     }
@@ -221,8 +225,8 @@ function fecharPainelLateral() {
 
 // Upload de Arquivo no Checklist
 async function uploadArquivoChecklist(tarefaId, index, input) {
-    if(!input.files || input.files.length === 0) return;
-    
+    if (!input.files || input.files.length === 0) return;
+
     const file = input.files[0];
     const fd = new FormData();
     fd.append('tarefa_id', tarefaId);
@@ -236,63 +240,63 @@ async function uploadArquivoChecklist(tarefaId, index, input) {
     label.innerText = "Enviando...";
 
     try {
-        const resp = await fetch('../api/tarefa_checklist_toggle.php', { method:'POST', body:fd });
+        const resp = await fetch('../api/tarefa_checklist_toggle.php', { method: 'POST', body: fd });
         const json = await resp.json();
-        if(json.ok) {
+        if (json.ok) {
             // Atualiza apenas visualmente ou recarrega o painel
             // Para simplicidade, vamos recarregar o dashboard e reabrir o painel buscando dados novos
             // (Em produção, ideal seria atualizar o DOM localmente)
             label.innerText = "Sucesso!";
-            
+
             // Recarrega dados e atualiza o modal aberto
             carregarDashboard().then(() => {
-               // Reabre o modal com os dados atualizados (precisaria buscar a tarefa atualizada no array)
-               // Como simplificação: fecha e pede para usuário reabrir se quiser ver a mudança
-               alert("Arquivo enviado com sucesso!");
-               fecharPainelLateral();
-               carregarDashboard();
+                // Reabre o modal com os dados atualizados (precisaria buscar a tarefa atualizada no array)
+                // Como simplificação: fecha e pede para usuário reabrir se quiser ver a mudança
+                alert("Arquivo enviado com sucesso!");
+                fecharPainelLateral();
+                carregarDashboard();
             });
         } else {
             alert("Erro: " + json.erro);
             label.innerText = originalText;
         }
-    } catch(e) { console.error(e); }
+    } catch (e) { console.error(e); }
 }
 
 async function toggleCheckItemPainel(id, index, checkbox) {
     try {
         await fetch('../api/tarefa_checklist_toggle.php', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tarefa_id: id, index: index, feito: checkbox.checked })
         });
         // Não precisa fazer nada se der certo, o checkbox já mudou
-    } catch(e) { 
+    } catch (e) {
         checkbox.checked = !checkbox.checked; // Reverte erro
-        alert("Erro de conexão"); 
+        alert("Erro de conexão");
     }
 }
 
 async function enviarParaRevisao(id) {
-    if(!confirm("Confirma que finalizou todas as entregas? A tarefa será enviada para aprovação do gestor.")) return;
-    
+    if (!confirm("Confirma que finalizou todas as entregas? A tarefa será enviada para aprovação do gestor.")) return;
+
     const fd = new FormData();
     fd.append('tarefa_id', id);
     fd.append('status', 'CONCLUIDA'); // O backend vai interceptar e mudar para EM_REVISAO
     fd.append('comentario', 'Colaborador finalizou as etapas e enviou para revisão.');
 
     try {
-        const resp = await fetch('../api/tarefa_entregar.php', { method:'POST', body:fd });
+        const resp = await fetch('../api/tarefa_entregar.php', { method: 'POST', body: fd });
         const json = await resp.json();
-        
-        if(json.ok) {
-            alert(json.novo_status === 'EM_REVISAO' ? "Enviado para o Gestor com sucesso! 🚀" : "Tarefa salva.");
+
+        if (json.ok) {
+            alert(json.novo_status === 'EM_REVISAO' ? "Enviado para o Gestor com sucesso!" : "Tarefa salva.");
             fecharPainelLateral();
             carregarDashboard();
         } else {
             alert(json.erro);
         }
-    } catch(e) { alert("Erro de conexão."); }
+    } catch (e) { alert("Erro de conexão."); }
 }
 
 
@@ -301,10 +305,11 @@ async function enviarParaRevisao(id) {
 // =============================================================================
 
 function renderizarDashboardGestor(data) {
-    // 1. KPIs
-    const kpiContainer = document.getElementById('kpiContainer');
-    if (kpiContainer && data.kpis) {
-        kpiContainer.innerHTML = data.kpis.map(k => `
+    try {
+        // 1. KPIs
+        const kpiContainer = document.getElementById('kpiContainer');
+        if (kpiContainer && data.kpis) {
+            kpiContainer.innerHTML = data.kpis.map(k => `
             <div class="card-info">
                 <div class="icon-box c-${k.cor}" style="width:50px; height:50px; display:flex; align-items:center; justify-content:center;">
                     ${ICONS[k.icone] || ICONS.task}
@@ -315,19 +320,19 @@ function renderizarDashboardGestor(data) {
                 </div>
             </div>
         `).join('');
-    }
+        }
 
-    const mainList = document.getElementById('mainListContainer');
-    if (mainList) {
-        let html = '';
+        const mainList = document.getElementById('mainListContainer');
+        if (mainList) {
+            let html = '';
 
-        // 2. LISTA DE APROVAÇÕES (EM_REVISAO) - Prioridade no topo
-        if (data.pendencias && data.pendencias.length > 0) {
-            html += `<h4 style="margin:0 0 15px 0; color:#d32f2f; display:flex; align-items:center; gap:8px;">
+            // 2. LISTA DE APROVAÇÕES (EM_REVISAO) - Prioridade no topo
+            if (data.pendencias && data.pendencias.length > 0) {
+                html += `<h4 style="margin:0 0 15px 0; color:#d32f2f; display:flex; align-items:center; gap:8px;">
                         ${ICONS.alerta} Atenção Necessária (Aprovações)
                      </h4>`;
-            
-            html += data.pendencias.map(t => `
+
+                html += data.pendencias.map(t => `
                 <div style="background:#fff5f5; border:1px solid #ffcdd2; border-radius:12px; padding:15px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <div style="font-weight:700; color:#b71c1c; font-size:1rem;">${t.titulo}</div>
@@ -340,17 +345,17 @@ function renderizarDashboardGestor(data) {
                     </button>
                 </div>
             `).join('');
-            
-            html += `<hr style="border:0; border-top:1px solid #eee; margin:25px 0;">`;
-        }
 
-        // 3. Lista Geral
-        html += `<h4 style="margin:0 0 15px 0; color:#2b3674;">Acompanhamento Geral</h4>`;
-        
-        if (data.listas && data.listas.length > 0) {
-            // Se for gestor vendo tarefas
-            if (data.papel === 'GESTOR') {
-                html += data.listas.map(t => `
+                html += `<hr style="border:0; border-top:1px solid #eee; margin:25px 0;">`;
+            }
+
+            // 3. Lista Geral
+            html += `<h4 style="margin:0 0 15px 0; color:#2b3674;">Acompanhamento Geral</h4>`;
+
+            if (data.listas && data.listas.length > 0) {
+                // Se for gestor vendo tarefas
+                if (data.papel === 'GESTOR') {
+                    html += data.listas.map(t => `
                     <div class="project-item" style="padding:15px; border-bottom:1px solid #eee;">
                         <div style="display:flex; align-items:center; gap:15px;">
                             <div style="background:#f4f7fe; padding:10px; border-radius:10px; color:#6A66FF;">${ICONS.task}</div>
@@ -365,10 +370,10 @@ function renderizarDashboardGestor(data) {
                         </div>
                     </div>
                 `).join('');
-            } 
-            // Se for Dono vendo Projetos
-            else {
-                html += data.listas.map(p => `
+                }
+                // Se for Dono vendo Projetos
+                else {
+                    html += data.listas.map(p => `
                     <div class="project-item" style="padding:15px; border-bottom:1px solid #eee;">
                         <div style="display:flex; align-items:center; gap:15px;">
                             <div style="background:#e3f2fd; padding:10px; border-radius:10px; color:#0d6efd;">${ICONS.folder}</div>
@@ -385,28 +390,33 @@ function renderizarDashboardGestor(data) {
                         </div>
                     </div>
                 `).join('');
+                }
+            } else {
+                html += `<div style="text-align:center; color:#999; padding:20px;">Nada em andamento.</div>`;
             }
-        } else {
-            html += `<div style="text-align:center; color:#999; padding:20px;">Nada em andamento.</div>`;
+
+            mainList.innerHTML = html;
         }
 
-        mainList.innerHTML = html;
-    }
-
-    if (document.getElementById('prodChart') && data.grafico) {
-        renderizarGrafico(document.getElementById('prodChart'), data.grafico);
+        if (document.getElementById('prodChart') && data.grafico) {
+            renderizarGrafico(document.getElementById('prodChart'), data.grafico);
+        }
+    } catch (e) {
+        console.error("Erro renderizacao:", e);
+        const el = document.getElementById('mainListContainer');
+        if (el) el.innerHTML = `<div style="color:red; background:#ffebee; padding:20px; border-radius:10px;">
+            <strong>Erro Javascript:</strong><br>${e.message}
+        </div>`;
     }
 }
 
 // --- MODAL DE REVISÃO DO GESTOR ---
 async function abrirModalRevisao(tarefaId) {
-    // 1. Busca detalhes (Checklist e arquivos)
-    // Precisamos de um endpoint que retorne a tarefa completa. Usaremos tarefa_buscar.php
     try {
         const resp = await fetch('../api/tarefa_buscar.php?id=' + tarefaId);
         const json = await resp.json();
-        if(!json.ok) return alert(json.erro);
-        
+        if (!json.ok) return alert(json.erro);
+
         const t = json.tarefa;
         const checklist = JSON.parse(t.checklist || '[]');
 
@@ -430,7 +440,7 @@ async function abrirModalRevisao(tarefaId) {
                                     ${i.arquivo ? `
                                         <div style="margin-left:28px; margin-top:5px; font-size:0.85rem; background:white; padding:5px 10px; border:1px solid #ddd; border-radius:6px; display:inline-block;">
                                             <a href="../public/${i.arquivo.url}" target="_blank" style="text-decoration:none; color:#0d6efd; display:flex; align-items:center; gap:5px;">
-                                                📎 ${i.arquivo.nome} <span style="color:#999; font-size:0.7rem;">(${i.arquivo.data})</span>
+                                                ${ICONS.link} ${i.arquivo.nome} <span style="color:#999; font-size:0.7rem;">(${i.arquivo.data})</span>
                                             </a>
                                         </div>
                                     ` : '<div style="margin-left:28px; margin-top:2px; font-size:0.75rem; color:#aaa;">(Sem arquivo anexado)</div>'}
@@ -445,21 +455,21 @@ async function abrirModalRevisao(tarefaId) {
                     
                     <div style="display:flex; justify-content:flex-end; gap:10px;">
                         <button onclick="document.getElementById('modalRevisaoOverlay').remove()" class="botao-secundario">Cancelar</button>
-                        <button onclick="processarRevisao(${t.id}, 'reprovar')" class="botao-secundario" style="color:#d32f2f; border-color:#d32f2f;">❌ Devolver para Ajustes</button>
-                        <button onclick="processarRevisao(${t.id}, 'aprovar')" class="botao-primario" style="background:#2ecc71;">✅ Aprovar & Concluir</button>
+                        <button onclick="processarRevisao(${t.id}, 'reprovar')" class="botao-secundario" style="color:#d32f2f; border-color:#d32f2f; display:inline-flex; align-items:center; gap:5px;">${ICONS.close} Devolver para Ajustes</button>
+                        <button onclick="processarRevisao(${t.id}, 'aprovar')" class="botao-primario" style="background:#2ecc71; display:inline-flex; align-items:center; gap:5px;">${ICONS.check} Aprovar & Concluir</button>
                     </div>
                 </div>
             </div>
         `;
-        
+
         document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    } catch(e) { alert("Erro ao carregar tarefa."); }
+    } catch (e) { alert("Erro ao carregar tarefa."); }
 }
 
 async function processarRevisao(id, acao) {
     const feedback = document.getElementById('txtFeedbackRevisao').value;
-    
+
     if (acao === 'reprovar' && !feedback.trim()) {
         alert("Para devolver a tarefa, você DEVE escrever um feedback explicando o que ajustar.");
         return;
@@ -467,33 +477,33 @@ async function processarRevisao(id, acao) {
 
     // Se aprovar, status vira CONCLUIDA (100%). Se reprovar, volta para EM_ANDAMENTO.
     const status = (acao === 'aprovar') ? 'CONCLUIDA' : 'EM_ANDAMENTO';
-    
+
     const fd = new FormData();
     fd.append('tarefa_id', id);
     fd.append('status', status);
-    if(feedback) fd.append('feedback_revisao', feedback);
-    if(acao === 'aprovar') fd.append('progresso', 100);
+    if (feedback) fd.append('feedback_revisao', feedback);
+    if (acao === 'aprovar') fd.append('progresso', 100);
 
     // Salva na API
     try {
-        const resp = await fetch('../api/tarefa_entregar.php', { method:'POST', body:fd });
+        const resp = await fetch('../api/tarefa_entregar.php', { method: 'POST', body: fd });
         const json = await resp.json();
-        
-        if(json.ok) {
+
+        if (json.ok) {
             document.getElementById('modalRevisaoOverlay').remove();
-            alert(acao === 'aprovar' ? "Tarefa Aprovada e Concluída! 🎉" : "Tarefa Devolvida para Ajustes.");
+            alert(acao === 'aprovar' ? "Tarefa Aprovada e Concluída!" : "Tarefa Devolvida para Ajustes.");
             carregarDashboard(); // Atualiza a lista do gestor
         } else {
             alert(json.erro);
         }
-    } catch(e) { alert("Erro de conexão"); }
+    } catch (e) { alert("Erro de conexão"); }
 }
 
 // --- UTILITÁRIO GRÁFICO ---
 function renderizarGrafico(canvas, dados) {
-    if(!window.Chart) return;
-    if(window.myChartInstance) window.myChartInstance.destroy();
-    
+    if (!window.Chart) return;
+    if (window.myChartInstance) window.myChartInstance.destroy();
+
     window.myChartInstance = new Chart(canvas.getContext('2d'), {
         type: 'line',
         data: {

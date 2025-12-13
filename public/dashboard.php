@@ -359,7 +359,8 @@ $isColab = ($papel == 'FUNCIONARIO' || $papel == 'COLABORADOR');
 
         <?php if ($isColab): ?>
             <div class="dash-header-colab">
-                <h1>Olá, <?= htmlspecialchars($usuario['nome']) ?>! 👋</h1>
+                <h1 style="display:flex; align-items:center; gap:10px;">Olá, <?= htmlspecialchars($usuario['nome']) ?>!
+                    <span style="color:#f1c40f;"><?= getIcone('aceno') ?></span></h1>
                 <p>Aqui está o panorama da sua operação hoje.</p>
             </div>
 
@@ -401,7 +402,7 @@ $isColab = ($papel == 'FUNCIONARIO' || $papel == 'COLABORADOR');
                     <div class="focus-header">
                         <div class="focus-title">Minhas Próximas Entregas</div>
                         <button onclick="carregarDashboard()"
-                            style="border:none; background:none; cursor:pointer; color:#999;">🔄</button>
+                            style="border:none; background:none; cursor:pointer; color:#999; display:flex; align-items:center;"><?= getIcone('refresh') ?></button>
                     </div>
                     <div id="listaTarefasColab">
                         <p style="text-align:center; color:#999; padding:20px;">Carregando...</p>
@@ -421,7 +422,7 @@ $isColab = ($papel == 'FUNCIONARIO' || $papel == 'COLABORADOR');
                     <h3 style="margin:0; font-size:1.1rem; color:#2b3674;">Detalhes da Tarefa</h3>
                     <div style="display:flex; gap:10px;">
                         <button onclick="fecharPainelLateral()"
-                            style="border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+                            style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:#999; display:flex; align-items:center;"><?= getIcone('close') ?></button>
                     </div>
                 </div>
                 <div class="side-body" id="painelLateralBody">
@@ -503,8 +504,9 @@ $isColab = ($papel == 'FUNCIONARIO' || $papel == 'COLABORADOR');
                         <small style="color:#888; font-weight:600;">TEMPO TOTAL</small>
                         <div style="font-size:1.2rem; font-weight:700; color:#333;" id="displayTempoTotal">${formatarMinutos(tarefaAtual.tempo_total_minutos || 0)}</div>
                     </div>
-                    <button class="botao-primario" id="btnTimerPanel" onclick="toggleTimerPainel()" style="padding:8px 15px; font-size:0.9rem;">
-                        ▶ Iniciar
+                    </div>
+                    <button class="botao-primario" id="btnTimerPanel" onclick="toggleTimerPainel()" style="padding:8px 15px; font-size:0.9rem; display:flex; align-items:center; gap:6px;">
+                        ${ICONS.play} Iniciar
                     </button>
                 </div>
             `;
@@ -556,8 +558,8 @@ $isColab = ($papel == 'FUNCIONARIO' || $papel == 'COLABORADOR');
                 <button class="botao-secundario" style="width:100%; margin-bottom:10px;" onclick="window.location.href='minhas_tarefas.php'">
                     Ver Detalhes Completos / Anexar
                 </button>
-                <button class="botao-primario" style="width:100%; background:#05cd99;" onclick="concluirTarefaPainel(${tarefaAtual.id})">
-                    ✔ Marcar como Concluída
+                <button class="botao-primario" style="width:100%; background:#05cd99; display:flex; justify-content:center; align-items:center; gap:8px;" onclick="concluirTarefaPainel(${tarefaAtual.id})">
+                    ${ICONS.check} Marcar como Concluída
                 </button>
             `;
 
@@ -579,7 +581,7 @@ $isColab = ($papel == 'FUNCIONARIO' || $papel == 'COLABORADOR');
                 const btn = document.getElementById('btnTimerPanel');
                 if (!timerInterval) {
                     // Iniciar
-                    btn.innerHTML = "⏸ Pausar";
+                    btn.innerHTML = ICONS.pause + " Pausar";
                     btn.style.backgroundColor = "#ffce20";
                     btn.style.color = "#333";
 
@@ -595,7 +597,7 @@ $isColab = ($papel == 'FUNCIONARIO' || $papel == 'COLABORADOR');
                     // Pausar e Salvar
                     clearInterval(timerInterval);
                     timerInterval = null;
-                    btn.innerHTML = "▶ Continuar";
+                    btn.innerHTML = ICONS.play + " Continuar";
                     btn.style.backgroundColor = "";
                     btn.style.color = "";
 
@@ -653,19 +655,20 @@ $isColab = ($papel == 'FUNCIONARIO' || $papel == 'COLABORADOR');
                 fd.append('progresso', 100);
 
                 try {
-                    await fetch('../api/tarefa_entregar.php', { method: 'POST', body: fd });
-                    alert("Tarefa concluída! 🎉");
-                    fecharPainelLateral();
-                    carregarDashboard(); // Recarrega a lista
-                } catch (e) { alert("Erro ao salvar."); }
-            }
+                    try {
+                        await fetch('../api/tarefa_entregar.php', { method: 'POST', body: fd });
+                        alert("Tarefa concluída!");
+                        fecharPainelLateral();
+                        carregarDashboard(); // Recarrega a lista
+                    } catch (e) { alert("Erro ao salvar."); }
+                }
 
-            function formatarMinutos(mins) {
-                const h = Math.floor(mins / 60);
-                const m = mins % 60;
-                if (h > 0) return `${h}h ${m}m`;
-                return `${m}m`;
-            }
+                function formatarMinutos(mins) {
+                    const h = Math.floor(mins / 60);
+                    const m = mins % 60;
+                    if (h > 0) return `${h}h ${m}m`;
+                    return `${m}m`;
+                }
         </script>
     <?php endif; ?>
 </body>

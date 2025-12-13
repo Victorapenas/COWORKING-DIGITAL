@@ -1740,3 +1740,50 @@ input[type="file"]:hover {
 .sidebar.theme-blue .sidebar-footer>div>div:last-child {
     color: white !important;
 }
+
+/* 
+   -------------------------------------------------------------------------
+   CORREÇÃO DE ÍCONES DE KPI (CLASSES DE COR)
+   -------------------------------------------------------------------------
+*/
+.c-red {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.c-blue {
+    background: #e3f2fd;
+    color: #0d6efd;
+}
+
+.c-purple {
+    background: #ede7f6;
+    color: #5e35b1;
+}
+
+.c-orange {
+    background: #fff3e0;
+    color: #ef6c00;
+}
+
+.c-green {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.icon-box {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    /* Ajuste para não colar no texto */
+    font-size: 1.5rem;
+}
+
+.icon-box svg {
+    width: 24px;
+    height: 24px;
+}

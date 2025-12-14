@@ -36,7 +36,8 @@ O desenvolvimento priorizou telas essenciais (Equipe, Minhas Tarefas, Calendári
 ### Gestão de Tarefas
 
 Permite definir prioridade, prazo e status da tarefa.  
-Inclui o campo **tempo total (minutos)** no banco de dados para controle de produtividade (decisão na Reunião de 12 de Dezembro): https://docs.google.com/document/d/1wFhM7LjGoRqU8IiMPAtgJL00fHPFNKNgyV-NAWMxObM/edit?tab=t.rujeokiu43bs
+Inclui o campo **tempo total (minutos)** no banco de dados para controle de produtividade (decisão na Reunião de 12 de Dezembro):  
+https://docs.google.com/document/d/1wFhM7LjGoRqU8IiMPAtgJL00fHPFNKNgyV-NAWMxObM/edit?tab=t.rujeokiu43bs
 
 ### Interface (UI/UX)
 
@@ -44,8 +45,7 @@ O layout é responsivo e intuitivo, atendendo ao requisito de seguir boas práti
 
 ### Escopo Revisado
 
-O projeto foi simplificado na reta final, eliminando a seção **"Emergencial"** para garantir a entrega dos requisitos essenciais (decisão na Reunião de 7 de Dezembro):
-
+O projeto foi simplificado na reta final, eliminando a seção **"Emergencial"** para garantir a entrega dos requisitos essenciais (decisão na Reunião de 7 de Dezembro):  
 https://docs.google.com/document/d/1LJvgQMH9G5PUWWsIuHzyxdBZRLOZCGg9sNr_F0AvPTg/edit?tab=t.xia051othp8z#heading=h.j1zu40gfkmwh
 
 ---
@@ -56,6 +56,8 @@ A Reunião de 13 de Dezembro:
 https://docs.google.com/document/d/14hHkOzSuoclhriFoi6C_U3wIfDt362krHkZuJf1QKGE/edit?usp=sharing  
 
 foi a etapa final para definir os ajustes necessários para submeter o projeto aos professores, com foco em garantir que o fluxo principal do sistema estivesse funcional.
+
+Além das reuniões remotas, o grupo também realizou **reuniões presenciais**, que foram fundamentais para alinhar decisões, ajustar o fluxo do projeto e resolver problemas de forma mais eficiente, contribuindo diretamente para a evolução e estabilidade do sistema.
 
 ### Ajustes de Última Hora
 

@@ -1,6 +1,7 @@
 <?php
-//atualização
 // ARQUIVO: public/projetos.php
+// ATUALIZADO: Correção visual dos links e funcionamento das abas do modal
+
 require_once __DIR__ . '/../includes/seguranca.php';
 require_once __DIR__ . '/../includes/ui_auxiliar.php';
 require_once __DIR__ . '/../includes/funcoes.php';
@@ -26,6 +27,43 @@ $listaEquipes = listarEquipes($empresaId);
         .grid-layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; }
         .empty-state { grid-column: 1 / -1; text-align: center; padding: 60px; color: #999; border: 2px dashed #eee; border-radius: 16px; display: flex; flex-direction: column; align-items: center; }
         .empty-state-icon { font-size: 3rem; opacity: 0.3; margin-bottom: 15px; }
+        
+        /* --- ESTILOS PARA LINKS DINÂMICOS (Visual "Bonitinho") --- */
+        .link-row { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 10px; 
+            align-items: center; 
+            background: #f8f9fa; 
+            padding: 10px; 
+            border-radius: 8px; 
+            border: 1px solid #eef0f7; 
+        }
+        .link-row input { 
+            margin-bottom: 0 !important; 
+            background: #fff; 
+        }
+        .btn-remove-link { 
+            color: #e74c3c; 
+            background: none; 
+            border: none; 
+            cursor: pointer; 
+            font-size: 1.2rem; 
+            padding: 0 10px; 
+            transition: transform 0.2s;
+        }
+        .btn-remove-link:hover { 
+            transform: scale(1.1); 
+        }
+        
+        /* Container de arquivos existentes no modal */
+        .arquivos-atuais-container {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fcfcfc;
+            border: 1px dashed #e0e0e0;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
@@ -34,8 +72,6 @@ $listaEquipes = listarEquipes($empresaId);
     </div>
 
     <div class="main-content">
-
-
         <div style="display:flex; justify-content:space-between; align-items:end; margin-bottom: 30px;">
             <div>
                 <h1 style="font-size: 2rem; color: #2c3e50; font-weight:800; margin:0;">Projetos</h1>
@@ -74,14 +110,16 @@ $listaEquipes = listarEquipes($empresaId);
     </div>
 
     <div id="modalProjeto" class="modal">
-        <div class="modal-content">
-            <h3 id="modalTitle" style="color:var(--text-main); margin-top:0;">Novo Projeto</h3>
+        <div class="modal-content" style="width: 700px; max-height: 90vh; overflow-y: auto;">
+            <span class="close-btn" onclick="closeModal('modalProjeto')" style="position: absolute; right: 20px; top: 20px; cursor: pointer; font-size: 1.5rem; color: #999;">&times;</span>
+            
+            <h3 id="modalTitle" style="color:var(--text-main); margin-top:0; margin-bottom: 20px;">Novo Projeto</h3>
             
             <div class="modal-tabs">
-                <div class="modal-tab active" onclick="switchFormTab('info', this)">Informações</div>
-                <div class="modal-tab" onclick="switchFormTab('anexos', this)">Anexos e Links</div>
+                <div class="modal-tab active" data-target="tab-info" onclick="switchFormTab('info', this)">Informações</div>
+                <div class="modal-tab" data-target="tab-anexos" onclick="switchFormTab('anexos', this)">Anexos e Links</div>
                 <?php if($is_socio): ?>
-                <div class="modal-tab" onclick="switchFormTab('privado', this)" style="color:#6A66FF;">
+                <div class="modal-tab" data-target="tab-privado" onclick="switchFormTab('privado', this)" style="color:#6A66FF;">
                     <?= getIcone('cadeado') ?> Área do Sócio
                 </div>
                 <?php endif; ?>
@@ -92,15 +130,27 @@ $listaEquipes = listarEquipes($empresaId);
                 
                 <div id="tab-info" class="tab-panel active">
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                        <div class="form-group"><label>Nome do Projeto</label><input type="text" name="nome" id="projNome" required></div>
-                        <div class="form-group"><label>Cliente</label><input type="text" name="cliente" id="projCliente"></div>
-                        <div class="form-group"><label>Início</label><input type="date" name="data_inicio" id="projInicio"></div>
-                        <div class="form-group"><label>Previsão Fim</label><input type="date" name="data_fim" id="projFim"></div>
+                        <div class="form-group">
+                            <label>Nome do Projeto</label>
+                            <input type="text" name="nome" id="projNome" class="campo-padrao" required placeholder="Ex: Campanha de Verão">
+                        </div>
+                        <div class="form-group">
+                            <label>Cliente</label>
+                            <input type="text" name="cliente" id="projCliente" class="campo-padrao" placeholder="Nome do Cliente">
+                        </div>
+                        <div class="form-group">
+                            <label>Início</label>
+                            <input type="date" name="data_inicio" id="projInicio" class="campo-padrao">
+                        </div>
+                        <div class="form-group">
+                            <label>Previsão Fim</label>
+                            <input type="date" name="data_fim" id="projFim" class="campo-padrao">
+                        </div>
                     </div>
                     
                     <div class="form-group">
                         <label>Status Atual</label>
-                        <select name="status" id="projStatus">
+                        <select name="status" id="projStatus" class="campo-padrao">
                             <option value="PLANEJADO">Planejado</option>
                             <option value="EM_ANDAMENTO">Em Andamento</option>
                             <option value="CONCLUIDO">Concluído</option>
@@ -130,35 +180,50 @@ $listaEquipes = listarEquipes($empresaId);
 
                     <div class="form-group">
                         <label>Logo do Cliente (Opcional)</label>
-                        <div class="file-upload-zone" onclick="document.getElementById('logo_input').click()">
-                            <?= getIcone('imagem') ?> <br> Clique para enviar a logo
+                        <div class="file-upload-zone" onclick="document.getElementById('logo_input').click()" style="border: 2px dashed #ddd; padding: 15px; text-align: center; border-radius: 8px; cursor: pointer; background: #f9f9f9;">
+                            <?= getIcone('imagem') ?> <br> <span style="font-size:0.8rem; color:#666;">Clique para enviar a logo</span>
                         </div>
                         <input type="file" id="logo_input" name="logo_cliente" accept="image/*" style="display:none;" onchange="previewFile(this)">
-                        <div id="logo_preview" style="font-size:0.8rem; margin-top:5px; color:#0d6efd;"></div>
+                        <div id="logo_preview" style="font-size:0.8rem; margin-top:5px; color:#0d6efd; font-weight:bold;"></div>
                     </div>
                     
-                    <div class="form-group"><label>Descrição</label><textarea name="descricao" id="projDesc" rows="3"></textarea></div>
+                    <div class="form-group">
+                        <label>Descrição</label>
+                        <textarea name="descricao" id="projDesc" rows="3" class="campo-padrao" placeholder="Detalhes sobre o projeto..."></textarea>
+                    </div>
                 </div>
 
                 <div id="tab-anexos" class="tab-panel">
                     <div class="form-group">
-                        <label>Arquivos Públicos</label>
-                        <input type="file" name="docs_publicos[]" multiple class="campo-form">
-                        <div id="arquivosAtuaisPublicos" style="margin-top:10px;"></div>
+                        <label>Arquivos Públicos (PDF, Imagens, Doc)</label>
+                        <input type="file" name="docs_publicos[]" multiple class="campo-padrao" style="padding: 10px; height: auto;">
+                        <div id="arquivosAtuaisPublicos" class="arquivos-atuais-container"></div>
                     </div>
+                    
                     <div class="form-group">
-                        <label>Links Externos</label>
+                        <label>Links Externos (Drive, Figma, Trello)</label>
                         <div id="containerLinksPublicos"></div>
-                        <button type="button" onclick="addLinkInput('containerLinksPublicos')" class="btn-add-mini">+ Adicionar Link</button>
+                        <button type="button" onclick="addLinkInput('containerLinksPublicos')" class="botao-secundario" style="width:100%; border-style:dashed;">+ Adicionar Link</button>
                     </div>
                 </div>
 
                 <?php if($is_socio): ?>
                 <div id="tab-privado" class="tab-panel">
-                    <div class="form-group"><label>Contratos / Documentos Confidenciais</label><input type="file" name="docs_privados[]" multiple class="campo-form">
-                        <div id="arquivosAtuaisPrivados" style="margin-top:10px;"></div>
+                    <div style="background: #fff0f0; padding: 10px; border-radius: 8px; border: 1px solid #ffcdd2; color: #c62828; font-size: 0.9rem; margin-bottom: 15px;">
+                        <?= getIcone('cadeado') ?> <strong>Área Confidencial:</strong> Arquivos e links aqui só são visíveis para Sócios e Líderes.
                     </div>
-                    <div class="form-group"><label>Links Privados</label><div id="containerLinksPrivados"></div><button type="button" onclick="addLinkInput('containerLinksPrivados', true)" class="btn-add-mini">+ Link Privado</button></div>
+
+                    <div class="form-group">
+                        <label>Contratos / Documentos Confidenciais</label>
+                        <input type="file" name="docs_privados[]" multiple class="campo-padrao" style="padding: 10px; height: auto;">
+                        <div id="arquivosAtuaisPrivados" class="arquivos-atuais-container"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Links Privados</label>
+                        <div id="containerLinksPrivados"></div>
+                        <button type="button" onclick="addLinkInput('containerLinksPrivados', true)" class="botao-secundario" style="width:100%; border-style:dashed; border-color: #ffcdd2; color: #c62828;">+ Adicionar Link Privado</button>
+                    </div>
                 </div>
                 <?php endif; ?>
 
@@ -191,7 +256,7 @@ $listaEquipes = listarEquipes($empresaId);
         </div>
     </div>
 
-    <script src="../js/projetos.js"></script>
+    <script src="../js/projetos.js?v=<?= time() ?>"></script>
     <script>
         // Scripts auxiliares de UI (dropdown e tabs principais)
         document.querySelector('.custom-select-wrapper').addEventListener('click', function() {

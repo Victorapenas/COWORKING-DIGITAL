@@ -1,14 +1,32 @@
 <?php
 // ARQUIVO: public/tarefa.php
-// ATUALIZADO: Checklist com definição de tipos de evidência (Arquivo, Link, Texto)
+// ATUALIZADO: Correção de Responsável (busca automática), Horário e Modal
+
+// --- LÓGICA DE RECUPERAÇÃO DE MEMBROS (FALLBACK) ---
+// Se a lista de membros não foi passada pelo arquivo pai (ex: projeto_detalhes.php),
+// tentamos encontrá-la nas variáveis globais ou buscamos no banco.
+if (!isset($listaMembrosContexto) || empty($listaMembrosContexto)) {
+    if (isset($membrosProjeto)) {
+        $listaMembrosContexto = $membrosProjeto;
+    } elseif (isset($membrosDisponiveis)) {
+        $listaMembrosContexto = $membrosDisponiveis; // Comum em equipes.php e dashboard.php
+    } elseif (isset($listaMembros)) {
+        $listaMembrosContexto = $listaMembros; // Comum em relatorios.php
+    } elseif (isset($empresaId) && function_exists('getMembrosDisponiveis')) {
+        // Último recurso: busca direta no banco se tivermos o ID da empresa
+        $listaMembrosContexto = getMembrosDisponiveis($empresaId);
+    } else {
+        $listaMembrosContexto = [];
+    }
+}
 
 $idProjetoContexto = isset($id) ? $id : '';
-$listaMembrosContexto = isset($membrosProjeto) ? $membrosProjeto : [];
 ?>
 
 <div id="modalTarefa" class="modal">
     <div class="modal-content" style="width: 800px; max-width: 95%;"> 
         <span class="close-btn" onclick="closeModal('modalTarefa')">&times;</span>
+        
         <h3 id="modalTarefaTitle" style="margin-top: 0; color: #2b3674;">Nova Tarefa</h3>
 
         <form id="formCriarTarefa">
@@ -38,16 +56,21 @@ $listaMembrosContexto = isset($membrosProjeto) ? $membrosProjeto : [];
                                 <div class="form-group">
                                     <label>Responsável:</label>
                                     <select id="responsavelTarefa" name="responsavel_id" required class="campo-padrao">
-                                        <option value="">Selecione...</option>
+                                        <option value="">Selecione o responsável...</option>
                                         <?php 
                                         if (!empty($listaMembrosContexto)) {
                                             foreach ($listaMembrosContexto as $membro): 
-                                                $cargoLabel = !empty($membro['cargo_detalhe']) ? " (" . $membro['cargo_detalhe'] . ")" : "";
+                                                // Garante compatibilidade com diferentes formatos de array de membros
+                                                $mId = $membro['id'];
+                                                $mNome = $membro['nome'];
+                                                $mCargo = !empty($membro['cargo_detalhe']) ? " (" . $membro['cargo_detalhe'] . ")" : "";
                                         ?>
-                                            <option value="<?= $membro['id'] ?>">
-                                                <?= htmlspecialchars($membro['nome']) . htmlspecialchars($cargoLabel) ?>
+                                            <option value="<?= $mId ?>">
+                                                <?= htmlspecialchars($mNome . $mCargo) ?>
                                             </option>
-                                        <?php endforeach; } ?>
+                                        <?php endforeach; } else { ?>
+                                            <option value="" disabled>Nenhum membro encontrado</option>
+                                        <?php } ?>
                                     </select>
                                 </div>
                             </div>
@@ -66,8 +89,8 @@ $listaMembrosContexto = isset($membrosProjeto) ? $membrosProjeto : [];
                         <div style="display:flex; gap: 20px;">
                             <div style="flex:1;">
                                 <div class="form-group">
-                                    <label>Prazo:</label>
-                                    <input type="date" id="prazoTarefa" name="prazo" class="campo-padrao">
+                                    <label>Prazo e Horário:</label>
+                                    <input type="datetime-local" id="prazoTarefa" name="prazo" class="campo-padrao">
                                 </div>
                             </div>
                             <div style="flex:1;">
@@ -87,7 +110,7 @@ $listaMembrosContexto = isset($membrosProjeto) ? $membrosProjeto : [];
 
                     <div id="tab-checklist" class="tab-panel">
                         <div style="background: #e3f2fd; padding: 10px; border-radius: 8px; font-size: 0.85rem; color: #0d6efd; margin-bottom: 15px;">
-                            <i class="fa fa-info-circle"></i> Defina o que o colaborador deve entregar. Você pode exigir arquivos específicos (PNG, PDF) ou Links.
+                            <i class="fa fa-info-circle"></i> <strong>Configuração de Entrega:</strong> Defina o que o colaborador deve entregar. Se você selecionar "Requer Arquivo", o colaborador só poderá concluir o item enviando o anexo.
                         </div>
 
                         <div id="checklistContainer" style="max-height: 350px; overflow-y: auto; padding-right:5px;">
@@ -109,15 +132,17 @@ $listaMembrosContexto = isset($membrosProjeto) ? $membrosProjeto : [];
 </div>
 
 <script>
-    // Função para adicionar item visualmente no DOM (Versão Avançada)
+    // --- LÓGICA DO CHECKLIST DINÂMICO ---
+
+    // Adiciona um item ao checklist (Visualmente)
     window.adicionarItemChecklist = function(dados = {}) {
         const container = document.getElementById('checklistContainer');
         const index = container.children.length; 
 
-        // Defaults
+        // Valores padrão ou carregados da edição
         const descricao = dados.descricao || '';
         const tipo = dados.tipo_evidencia || 'check'; // check, arquivo, link
-        const formatos = dados.formatos || ''; // .png, .pdf
+        const formatos = dados.formatos || ''; // ex: .png, .pdf
         const concluido = dados.concluido == 1;
 
         const itemDiv = document.createElement('div');
@@ -136,8 +161,8 @@ $listaMembrosContexto = isset($membrosProjeto) ? $membrosProjeto : [];
                     <label style="font-size:0.75rem; color:#888; margin-bottom:3px; display:block;">Tipo de Entrega:</label>
                     <select name="checklist_tipo[]" class="campo-padrao" style="margin:0 !important; padding:5px;" onchange="toggleFormatos(this)">
                         <option value="check" ${tipo === 'check' ? 'selected' : ''}>Apenas Marcar (Simples)</option>
-                        <option value="arquivo" ${tipo === 'arquivo' ? 'selected' : ''}>Upload de Arquivo</option>
-                        <option value="link" ${tipo === 'link' ? 'selected' : ''}>Link Externo (Drive/Figma)</option>
+                        <option value="arquivo" ${tipo === 'arquivo' ? 'selected' : ''}>Requer Arquivo (Upload)</option>
+                        <option value="link" ${tipo === 'link' ? 'selected' : ''}>Requer Link (Drive/Figma)</option>
                     </select>
                 </div>
                 
@@ -153,18 +178,19 @@ $listaMembrosContexto = isset($membrosProjeto) ? $membrosProjeto : [];
         container.appendChild(itemDiv);
     };
 
-    // Mostra/Esconde campo de formatos
+    // Mostra/Esconde campo de formatos dependendo do tipo selecionado
     window.toggleFormatos = function(select) {
         const divFormatos = select.closest('div').nextElementSibling;
         if(select.value === 'arquivo') {
             divFormatos.style.display = 'block';
-            divFormatos.querySelector('input').focus();
+            const input = divFormatos.querySelector('input');
+            if(input) input.focus();
         } else {
             divFormatos.style.display = 'none';
         }
     }
     
-    // Switch de abas
+    // Alterna abas (Detalhes <-> Checklist)
     window.switchTarefaTab = function(button, targetId) {
         const modal = document.getElementById('modalTarefa');
         modal.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -172,19 +198,23 @@ $listaMembrosContexto = isset($membrosProjeto) ? $membrosProjeto : [];
         button.classList.add('active');
         document.getElementById(targetId).classList.add('active');
         
+        // Se abriu a aba checklist e está vazia, adiciona o primeiro item automaticamente
         if (targetId === 'tab-checklist' && document.getElementById('checklistContainer').children.length === 0) {
              adicionarItemChecklist();
         }
     }
 
+    // Função de limpeza
     window.resetChecklist = function() {
-        const container = document.getElementById('checklist-itens-container');
+        const container = document.getElementById('checklistContainer');
         if (container) {
-            container.innerHTML = ''; // Limpa todo o conteúdo
+            container.innerHTML = ''; 
         }
     }
 
-    // Submit
+    // Lógica de Submissão (AJAX)
+    // Nota: Essa função será anexada ao form pelo js/tarefas.js principal
+    // Mantemos aqui para garantir que ela exista caso o arquivo JS externo falhe ou demore.
     window.handleTarefaSubmit = async function(e) {
         e.preventDefault();
         const form = e.target;
@@ -211,16 +241,21 @@ $listaMembrosContexto = isset($membrosProjeto) ? $membrosProjeto : [];
         }
     };
     
-    // Abrir Modal
+    // Função Global para Abrir o Modal (Carrega dados se for edição)
+    // Verifica se já foi definida para evitar conflitos
     if (typeof openTarefaModal === 'undefined') {
         window.openTarefaModal = async function(projetoId = null, tarefaId = null) {
             const form = document.getElementById('formCriarTarefa');
             if(form) form.reset();
-            document.getElementById('checklistContainer').innerHTML = '';
+            
+            // Reseta Checklist
+            resetChecklist();
+            
             document.getElementById('tarefaProjetoId').value = projetoId || '';
             document.getElementById('tarefaId').value = tarefaId || "";
             document.getElementById('modalTarefaTitle').innerText = tarefaId ? "Editar Tarefa" : "Nova Tarefa";
 
+            // Se for edição, busca dados na API
             if (tarefaId) {
                 try {
                     const resp = await fetch(`../api/tarefa_buscar.php?id=${tarefaId}`);
@@ -232,7 +267,16 @@ $listaMembrosContexto = isset($membrosProjeto) ? $membrosProjeto : [];
                         document.getElementById('descricaoTarefa').value = t.descricao;
                         document.getElementById('responsavelTarefa').value = t.responsavel_id;
                         document.getElementById('prioridadeTarefa').value = t.prioridade;
-                        document.getElementById('prazoTarefa').value = t.prazo;
+                        
+                        // CORREÇÃO DATA: Formata para o input datetime-local (YYYY-MM-DDTHH:MM)
+                        if(t.prazo) {
+                            // Cria objeto Date e ajusta para string ISO compatível
+                            const dateObj = new Date(t.prazo);
+                            // Ajuste manual de fuso horário para garantir exibição correta no input
+                            dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset());
+                            document.getElementById('prazoTarefa').value = dateObj.toISOString().slice(0,16);
+                        }
+                        
                         document.getElementById('statusTarefa').value = t.status === 'A_FAZER' ? 'PENDENTE' : t.status;
                         
                         let checklist = [];
@@ -244,14 +288,16 @@ $listaMembrosContexto = isset($membrosProjeto) ? $membrosProjeto : [];
                             adicionarItemChecklist(); 
                         }
                     }
-                } catch(e) { alert("Erro ao carregar."); return; }
+                } catch(e) { alert("Erro ao carregar dados da tarefa."); return; }
             } else {
+                // Se for nova tarefa, inicia checklist vazio
                 adicionarItemChecklist(); 
             }
             document.getElementById('modalTarefa').style.display = 'flex';
         };
     }
     
+    // Inicialização
     document.addEventListener('DOMContentLoaded', () => {
         const form = document.getElementById('formCriarTarefa');
         if (form) form.addEventListener('submit', window.handleTarefaSubmit);

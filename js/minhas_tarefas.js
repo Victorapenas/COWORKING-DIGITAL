@@ -1,7 +1,32 @@
 // ARQUIVO: js/minhas_tarefas.js
 
-// Variável global para armazenar a tarefa aberta
+// --- VARIÁVEIS GLOBAIS DO TIMER ---
+let timerState = {
+    running: false,
+    seconds: 0,
+    intervalId: null,
+    tarefaId: null,
+    titulo: ''
+};
+
+// Variável global para armazenar a tarefa aberta (contexto)
 let tarefaAtualContexto = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Cria o elemento flutuante se não existir (apenas uma vez)
+    if (!document.getElementById('floatingTimer')) {
+        const floatDiv = document.createElement('div');
+        floatDiv.id = 'floatingTimer';
+        floatDiv.className = 'floating-timer-container';
+        floatDiv.onclick = reabrirModalTimer; // Ao clicar, abre o modal da tarefa ativa
+        floatDiv.innerHTML = `
+            <div class="float-icon-pulse"></div>
+            <span id="floatTimerText" class="float-time-text">00:00</span>
+            <span style="font-size:0.8rem; opacity:0.8; margin-left:5px;">Em andamento</span>
+        `;
+        document.body.appendChild(floatDiv);
+    }
+});
 
 /**
  * Abre o modal de execução da tarefa para o colaborador.
@@ -43,25 +68,42 @@ function abrirModalExecucao(tarefa) {
         `;
     }
 
-    // --- NOVO BLOCO: Configura o Feedback do Gestor ---
+    // --- Configura o Feedback do Gestor/Líder ---
     const feedbackArea = document.getElementById('execFeedbackArea');
     const feedbackText = document.getElementById('execFeedbackText');
 
-    // Assume que o campo 'feedback_revisao' é retornado pela API e a tarefa está ativa após uma devolução.
-    if (tarefa.feedback_revisao && tarefa.status === 'EM_ANDAMENTO') {
+    // Se houver feedback e a tarefa não estiver concluída, mostra o alerta
+    if (tarefa.feedback_revisao && tarefa.status !== 'CONCLUIDA') {
         feedbackText.innerText = tarefa.feedback_revisao;
         feedbackArea.style.display = 'block';
     } else {
         feedbackArea.style.display = 'none';
         feedbackText.innerText = '';
     }
-    // --- FIM NOVO BLOCO FEEDBACK ---
 
     // Configura o Select de Status (Lógica de Fluxo)
     configurarSelectStatus(tarefa.status);
 
+    // Remove a barra manual se ela existir (pois agora é automático)
+    const grupoManual = document.getElementById('groupProgressoManual');
+    if(grupoManual) grupoManual.style.display = 'none';
+
     // Renderiza o Checklist Rico (Avançado)
     renderizarChecklistRico(tarefa.checklist, tarefa.id);
+
+    // Ajusta o botão do Timer se já estiver rodando para esta tarefa
+    const btnTimer = document.getElementById('btnTimerPanel');
+    if (btnTimer) {
+        if (timerState.running && timerState.tarefaId == tarefa.id) {
+            btnTimer.innerHTML = "⏸ Pausar";
+            btnTimer.style.backgroundColor = "#ffce20"; 
+            btnTimer.style.color = "#333";
+        } else {
+            btnTimer.innerHTML = "▶ Iniciar"; // Reset se for outra tarefa
+            btnTimer.style.backgroundColor = ""; 
+            btnTimer.style.color = "";
+        }
+    }
 
     modal.style.display = 'flex';
 }
@@ -75,12 +117,12 @@ function configurarSelectStatus(statusAtual) {
 
     // Opções baseadas no fluxo: Colaborador -> Revisão -> Gestor
     
-    // Se está pendente ou fazendo
+    // Se está pendente, fazendo ou em revisão (retornada)
     if (['PENDENTE', 'EM_ANDAMENTO', 'EM_REVISAO'].includes(statusAtual)) {
         select.add(new Option("Em Andamento", "EM_ANDAMENTO"));
         select.add(new Option("Enviar para Revisão (Gestor)", "EM_REVISAO"));
     }
-    // Se já está concluída, permite reabrir (caso o Líder mande refazer)
+    // Se já está concluída, permite reabrir (caso o Líder mande refazer e o status mude manualmente)
     else if (statusAtual === 'CONCLUIDA') {
         select.add(new Option("Concluída", "CONCLUIDA"));
         select.add(new Option("Reabrir para Ajustes", "EM_ANDAMENTO"));
@@ -89,9 +131,112 @@ function configurarSelectStatus(statusAtual) {
     select.value = statusAtual;
 }
 
+// --- FUNÇÃO DO TIMER ---
+function toggleTimerPainel() {
+    const btn = document.getElementById('btnTimerPanel');
+    
+    if (!timerState.running) {
+        // INICIAR
+        timerState.running = true;
+        timerState.tarefaId = document.getElementById('execId').value;
+        // Pega título se disponível, ou usa genérico
+        const elTitulo = document.getElementById('execTitulo');
+        timerState.titulo = elTitulo ? elTitulo.innerText : 'Tarefa';
+        
+        if(btn) {
+            btn.innerHTML = "⏸ Pausar";
+            btn.style.backgroundColor = "#ffce20"; 
+            btn.style.color = "#333";
+        }
+        
+        // Inicia contagem
+        if (timerState.intervalId) clearInterval(timerState.intervalId);
+        timerState.intervalId = setInterval(() => {
+            timerState.seconds++;
+            atualizarDisplaysTimer();
+        }, 1000);
+
+    } else {
+        // PAUSAR E SALVAR
+        timerState.running = false;
+        clearInterval(timerState.intervalId);
+        
+        if(btn) {
+            btn.innerHTML = "▶ Continuar";
+            btn.style.backgroundColor = ""; 
+            btn.style.color = "";
+        }
+        
+        // Salva tempo no servidor (conversão p/ minutos)
+        const minutos = Math.ceil(timerState.seconds / 60);
+        if (minutos > 0) {
+            salvarTempoAPI(timerState.tarefaId, minutos);
+            // Reseta segundos locais após salvar, para não duplicar na próxima
+            timerState.seconds = 0; 
+        }
+        
+        const floatTimer = document.getElementById('floatingTimer');
+        if(floatTimer) floatTimer.style.display = 'none';
+    }
+}
+
+function atualizarDisplaysTimer() {
+    const format = formatTime(timerState.seconds);
+    
+    // Atualiza flutuante
+    const floatText = document.getElementById('floatTimerText');
+    if (floatText) floatText.innerText = format;
+}
+
+function formatTime(totalSeconds) {
+    const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+    const s = (totalSeconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+}
+
+// Quando fecha o modal, se o timer estiver rodando, mostra o flutuante
+function fecharPainelLateral() {
+    const modal = document.getElementById('modalExecucao');
+    if(modal) modal.style.display = 'none';
+    
+    if (timerState.running) {
+        const floatTimer = document.getElementById('floatingTimer');
+        if(floatTimer) floatTimer.style.display = 'flex';
+    }
+}
+
+// Ao clicar no flutuante, reabre o modal da tarefa que está rodando
+async function reabrirModalTimer() {
+    if (timerState.tarefaId) {
+        const floatTimer = document.getElementById('floatingTimer');
+        if(floatTimer) floatTimer.style.display = 'none';
+        
+        // Busca dados atualizados e abre
+        try {
+            const resp = await fetch(`../api/tarefa_buscar.php?id=${timerState.tarefaId}`);
+            const json = await resp.json();
+            if(json.ok) {
+                abrirModalExecucao(json.tarefa);
+            }
+        } catch(e) {
+            console.error("Erro ao reabrir tarefa do timer", e);
+        }
+    }
+}
+
+// Salva o tempo no backend
+async function salvarTempoAPI(id, minutos) {
+    const fd = new FormData(); 
+    fd.append('tarefa_id', id); 
+    fd.append('tempo_gasto', minutos);
+    
+    try { await fetch('../api/tarefa_entregar.php', { method: 'POST', body: fd }); } catch (e) {}
+}
+
+
 /**
  * Renderiza o checklist com lógica de tipos (Arquivo, Link, Check)
- * ALTERADO para incluir checkbox na submissão do formulário.
+ * ESTRUTURA RICA com Scroll e Inputs dedicados.
  */
 function renderizarChecklistRico(checklistJson, tarefaId) {
     const container = document.getElementById('listaChecklistColab');
@@ -103,22 +248,23 @@ function renderizarChecklistRico(checklistJson, tarefaId) {
     // Se não houver itens
     if (!itens || itens.length === 0) {
         container.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">Nenhum requisito de entrega definido.</div>';
-        txtProgresso.innerText = "0%";
+        if(txtProgresso) txtProgresso.innerText = "0%";
         return;
     }
 
     // Calcula progresso visual
     const feitos = itens.filter(i => i.concluido == 1).length;
     const pct = Math.round((feitos / itens.length) * 100);
-    txtProgresso.innerText = pct + "%";
+    if(txtProgresso) txtProgresso.innerText = pct + "%";
 
-    let html = '';
+    // Inicia o container com scroll
+    let html = `<div class="checklist-scroll-container">`; 
     
     itens.forEach((item, idx) => {
         const isDone = item.concluido == 1;
         // O tipo do item simples agora é 'toggle' ou 'check' (mantendo compatibilidade)
-        const tipo = item.tipo_evidencia || 'toggle'; 
-        const formatos = item.formatos || '*'; // ex: .png, .pdf
+        const tipo = item.tipo_evidencia || 'check'; 
+        const formatos = item.formatos || '*'; 
         
         let acaoHtml = '';
 
@@ -135,15 +281,19 @@ function renderizarChecklistRico(checklistJson, tarefaId) {
             }
 
             // Para itens simples (toggle), o status final é salvo via submissão principal
-            if (tipo === 'toggle') {
+            if (tipo === 'check' || tipo === 'toggle') {
                  acaoHtml = `
-                    <label class="custom-chk">
-                        <input type="checkbox" name="checklist_done[]" value="${idx}" checked>
-                        <span class="chk-checkmark"></span>
-                        <span style="font-size:0.8rem; color:#05cd99; font-weight: 600;">Marcado como Feito</span>
-                    </label>
+                    <div style="margin-top:5px;">
+                        <label class="custom-chk">
+                            <input type="checkbox" name="checklist_done[]" value="${idx}" checked disabled>
+                            <span class="chk-checkmark"></span>
+                            <span style="font-size:0.8rem; color:#05cd99; font-weight: 600;">Marcado como Feito</span>
+                        </label>
+                        <button type="button" onclick="removerEvidencia(${tarefaId}, ${idx})" class="btn-remove-evidencia" style="margin-left:10px; font-size:0.8rem; color:#d32f2f;">Desmarcar</button>
+                    </div>
                 `;
             } else {
+                // Itens ricos concluídos (Arquivo/Link)
                 acaoHtml = `
                     <div class="chk-done-box">
                         <a href="${link}" target="_blank" class="link-evidencia">
@@ -159,61 +309,60 @@ function renderizarChecklistRico(checklistJson, tarefaId) {
             if (tipo === 'arquivo') {
                 // Input de Arquivo
                 acaoHtml = `
-                    <div class="chk-upload-box">
+                    <div class="chk-upload-box" style="margin-top:10px;">
                         <label for="file_chk_${idx}" class="btn-upload-req">
                             📤 Enviar Arquivo (${formatos || 'Todos'})
                         </label>
                         <input type="file" id="file_chk_${idx}" accept="${formatos}" style="display:none" onchange="uploadChecklistItem(this, ${tarefaId}, ${idx})">
+                        <span id="loading_${idx}" style="display:none; font-size:0.8rem; color:#666; margin-left:10px;">Enviando...</span>
                     </div>
                 `;
             } else if (tipo === 'link') {
                 // Input de Link
                 acaoHtml = `
-                    <div class="chk-link-box">
+                    <div class="chk-link-box" style="margin-top:10px;">
                         <input type="text" id="link_chk_${idx}" placeholder="Cole o link aqui..." class="input-link-req">
                         <button type="button" onclick="salvarLinkChecklist(${tarefaId}, ${idx})" class="btn-save-link">Salvar</button>
                     </div>
                 `;
             } else {
                 // Checkbox Simples (TIPO TOGGLE/CHECK)
-                // Usamos o name="checklist_done[]" para ser enviado na submissão do formulário principal
                 acaoHtml = `
-                    <label class="custom-chk">
-                        <input type="checkbox" name="checklist_done[]" value="${idx}">
-                        <span class="chk-checkmark"></span>
-                        <span style="font-size:0.8rem; color:#666;">Marcar como feito</span>
-                    </label>
+                    <div style="margin-top:5px;">
+                        <label class="custom-chk">
+                            <input type="checkbox" onchange="toggleCheckItemPainel(${tarefaId}, ${idx}, this)">
+                            <span class="chk-checkmark"></span>
+                            <span style="font-size:0.8rem; color:#666;">Marcar como feito</span>
+                        </label>
+                    </div>
                 `;
             }
         }
 
-        // Monta o HTML do item
+        // Monta o HTML do item usando a classe chk-rich-item (definida no CSS novo)
         html += `
-            <div class="checklist-rich-item ${isDone ? 'done' : ''}">
+            <div class="chk-rich-item ${isDone ? 'done' : ''}">
                 <div class="chk-info">
-                    <span class="chk-index">${idx + 1}</span>
-                    <div class="chk-texts">
-                        <span class="chk-desc">${item.descricao}</span>
-                        ${tipo !== 'toggle' ? `<span class="chk-type-badge">${tipo === 'arquivo' ? 'Requer Arquivo' : 'Requer Link'}</span>` : ''}
+                    <span class="chk-index" style="background:#eee; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:0.8rem; margin-right:10px;">${idx + 1}</span>
+                    <div class="chk-texts" style="flex:1;">
+                        <span class="chk-desc" style="font-weight:600; color:#333;">${item.descricao}</span>
+                        ${tipo !== 'check' && tipo !== 'toggle' ? `<div style="margin-top:2px;"><span class="chk-type-badge">${tipo === 'arquivo' ? 'REQUER ARQUIVO' : 'REQUER LINK'}</span></div>` : ''}
                     </div>
                 </div>
-                <div class="chk-action-area">
+                <div class="chk-action-area" style="padding-left:34px;">
                     ${acaoHtml}
                 </div>
             </div>
         `;
     });
 
-    // Envolve a lista em um form que será submetido com o formulário principal
+    html += `</div>`; // Fecha container scroll
+
+    // Envolve a lista em um div que será lido na submissão
     container.innerHTML = `<div id="checklistFormContainer">${html}</div>`;
 }
 
-// --- FUNÇÕES AUXILIARES DE AÇÃO (As funções de upload, salvarLink, removerEvidencia e toggleItemSimples
-// que dependem de `tarefa_checklist_toggle.php` ficam inalteradas ou foram removidas/adaptadas) ---
-
-// As funções que manipulavam o status de checklist simples via AJAX (toggleItemSimples) não são mais necessárias
-// para itens simples, pois o status será salvo na submissão do formulário principal.
-// Itens de arquivo/link continuam usando a API separada.
+// --- FUNÇÕES AUXILIARES DE AÇÃO ---
 
 /**
  * Envia arquivo para o servidor via AJAX
@@ -228,11 +377,8 @@ async function uploadChecklistItem(input, tarefaId, idx) {
     fd.append('arquivo_item', input.files[0]);
 
     // Feedback visual imediato
-    const label = input.previousElementSibling; // O label do botão
-    if(label) {
-        label.innerText = "Enviando...";
-        label.style.opacity = "0.7";
-    }
+    const loadingSpan = document.getElementById(`loading_${idx}`);
+    if(loadingSpan) loadingSpan.style.display = 'inline';
 
     try {
         const resp = await fetch('../api/tarefa_checklist_toggle.php', { method: 'POST', body: fd });
@@ -243,12 +389,12 @@ async function uploadChecklistItem(input, tarefaId, idx) {
             atualizarContextoTarefa(tarefaId);
         } else {
             alert('Erro: ' + json.erro);
-            if(label) label.innerText = "Tentar Novamente";
+            if(loadingSpan) loadingSpan.style.display = 'none';
         }
     } catch (e) { 
         console.error(e); 
         alert('Erro de conexão'); 
-        if(label) label.innerText = "Erro. Tentar novamente.";
+        if(loadingSpan) loadingSpan.style.display = 'none';
     }
 }
 
@@ -279,6 +425,24 @@ async function salvarLinkChecklist(tarefaId, idx) {
 }
 
 /**
+ * Salva o checkbox simples (toggle)
+ */
+async function toggleCheckItemPainel(tarefaId, idx, checkbox) {
+    try {
+        await fetch('../api/tarefa_checklist_toggle.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tarefa_id: tarefaId, index: idx, feito: checkbox.checked, acao: 'toggle' })
+        });
+        // Atualiza para refletir progresso visualmente e travar se necessário
+        atualizarContextoTarefa(tarefaId);
+    } catch (e) {
+        checkbox.checked = !checkbox.checked; // Reverte se der erro
+        alert("Erro de conexão ao salvar.");
+    }
+}
+
+/**
  * Remove a evidência (arquivo ou link) e desmarca o item
  */
 async function removerEvidencia(tarefaId, idx) {
@@ -297,20 +461,17 @@ async function removerEvidencia(tarefaId, idx) {
 }
 
 /**
- * Funçao antiga `toggleItemSimples` removida, pois o salvamento é feito via submit do formulário principal.
- */
-// async function toggleItemSimples...
-
-/**
  * Recarrega os dados da tarefa para atualizar a view do checklist
  */
 async function atualizarContextoTarefa(id) {
-    // A tarefa_buscar.php precisa retornar o campo 'feedback_revisao'
     const resp = await fetch(`../api/tarefa_buscar.php?id=${id}`);
     const json = await resp.json();
     if(json.ok) {
         tarefaAtualContexto = json.tarefa;
-        abrirModalExecucao(json.tarefa); // Reabre o modal com os novos dados
+        // Reabre o modal com os novos dados para atualizar a UI
+        // Nota: Isso pode causar um "piscar" na tela, idealmente faríamos update parcial do DOM,
+        // mas reutilizar abrirModalExecucao garante consistência total.
+        abrirModalExecucao(json.tarefa); 
     }
 }
 
@@ -323,35 +484,24 @@ document.getElementById('formEntrega').addEventListener('submit', async function
     btn.disabled = true; 
     btn.innerText = "Processando...";
 
-    // --- NOVO: ANEXA CHECKLISTS AO FORM DATA ---
-    // Move os inputs do checklist (checkboxes) para o FormData
-    const formContainer = document.getElementById('checklistFormContainer');
-    if (formContainer) {
-        // Encontra todos os checkboxes com o name="checklist_done[]" dentro do container
-        const checklistInputs = formContainer.querySelectorAll('input[name="checklist_done[]"]');
-        
-        checklistInputs.forEach(input => {
-            // Apenas adiciona ao FormData se estiver checado.
-            // O PHP saberá que a ausência do índice significa que não foi marcado.
-            if (input.checked) {
-                // Adiciona o valor do checkbox (que é o índice do item) ao FormData
-                formData.append('checklist_done[]', input.value); 
-            }
-        });
-    }
-    // --- FIM NOVO BLOCO ---
+    // Prepara FormData base
+    const formData = new FormData(this);
+
+    // O status do checklist agora é salvo em tempo real via AJAX nos itens individuais.
+    // O formulário principal foca em atualizar status da tarefa, comentário geral e arquivo de entrega geral.
     
     try {
-        const formData = new FormData(this); // Refeito aqui para incluir checklist
-        
-        // Se a lógica do checklist não foi incluída acima, mova para cá e adicione novamente.
-        // Já que a lógica foi colocada no Listener, usamos o FormData que foi criado logo após.
-        
         const resp = await fetch('../api/tarefa_entregar.php', { method: 'POST', body: formData });
         const json = await resp.json();
 
         if (json.ok) {
             alert(json.mensagem);
+            
+            // Se concluiu a tarefa, para o timer
+            if(timerState.running && timerState.tarefaId == document.getElementById('execId').value) {
+                toggleTimerPainel(); // Isso vai parar o timer
+            }
+            
             window.location.reload();
         } else {
             alert(json.erro || "Erro ao salvar.");
@@ -367,8 +517,8 @@ document.getElementById('formEntrega').addEventListener('submit', async function
 
 // Fecha modal ao clicar fora
 window.onclick = function(event) {
-    const modals = document.querySelectorAll('.modal');
-    modals.forEach(m => {
-        if (event.target == m) m.style.display = "none";
-    });
+    const modal = document.getElementById('modalExecucao');
+    if (event.target == modal) {
+        fecharPainelLateral();
+    }
 }

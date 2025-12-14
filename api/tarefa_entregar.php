@@ -17,15 +17,15 @@ try {
     $statusSolicitado = $_POST['status'] ?? '';
     $progresso = isset($_POST['progresso']) ? (int)$_POST['progresso'] : -1;
     $comentario = trim($_POST['comentario'] ?? '');
-    $feedback = trim($_POST['feedback_revisao'] ?? ''); // Novo campo para gestor
+    $feedback = trim($_POST['feedback_revisao'] ?? ''); // Novo campo para gestor/líder
     
-    // NOVO: Recebe os índices dos itens de checklist marcados como concluídos
+    // Checkboxes do checklist
     $checklistDone = $_POST['checklist_done'] ?? []; 
-    $checklistDone = array_map('intval', (array)$checklistDone); // Garante que é um array de inteiros
+    $checklistDone = array_map('intval', (array)$checklistDone); 
     
     if (!$tarefaId) throw new Exception("Tarefa não identificada.");
 
-    // 1. Verifica permissões e dados atuais (ADICIONA 'checklist' e 'feedback_revisao' NO SELECT)
+    // 1. Verifica permissões e dados atuais
     $stmt = $pdo->prepare("SELECT responsavel_id, projeto_id, status, checklist, feedback_revisao FROM tarefa WHERE id = ?");
     $stmt->execute([$tarefaId]);
     $tarefa = $stmt->fetch();
@@ -39,23 +39,20 @@ try {
         throw new Exception("Sem permissão para alterar esta tarefa.");
     }
     
-    // 2. LÓGICA DE STATUS RESTRITA
+    // 2. Lógica de Status
     $novoStatus = $statusSolicitado;
 
-    // REGRA DE OURO: Colaborador não conclui direto. Vai para Revisão.
+    // Colaborador sempre manda para revisão (não pode concluir direto)
     if (!$isGestor && ($statusSolicitado === 'CONCLUIDA' || $statusSolicitado === 'EM_REVISAO')) {
         $novoStatus = 'EM_REVISAO'; 
-        // Opcional: Define progresso 99% para indicar que acabou a parte dele
-        // Vamos manter o progresso dinâmico do checklist
-        $progresso = -1; // Força o recálculo do progresso pela lógica do checklist
+        $progresso = -1; // Força recálculo baseado no checklist
     }
 
-    // REGRA: Apenas Gestor/Líder define CONCLUIDA
     if ($statusSolicitado === 'CONCLUIDA' && !$isGestor) {
         throw new Exception("Apenas gestores podem aprovar a tarefa.");
     }
 
-    // 3. LÓGICA DO CHECKLIST E CÁLCULO DE PROGRESSO (NOVO BLOCO)
+    // 3. Lógica do Checklist e Cálculo de Progresso
     $novoProgresso = $progresso;
     $sqlUp = "UPDATE tarefa SET atualizado_em = NOW()";
     $paramsUp = [];
@@ -67,31 +64,26 @@ try {
         $concluidos = 0;
         
         foreach ($checklist as $index => &$item) {
-            // Apenas atualiza itens 'toggle' (simples)
+            // Apenas atualiza itens 'toggle' (simples) via este endpoint
             if ($item['tipo_evidencia'] === 'toggle' || $item['tipo_evidencia'] === 'check') {
-                // Se o índice estiver na lista de 'checklist_done', marca como concluído
                 $item['concluido'] = in_array($index, $checklistDone) ? 1 : 0; 
             }
-
-            // Conta todos os itens concluídos (toggle, arquivo, link)
             if (!empty($item['concluido'])) {
                 $concluidos++;
             }
         }
-        unset($item); // Boas práticas para referências em foreach
+        unset($item); 
 
-        // 3.1. Atualiza o checklist JSON no banco de dados
         $novoJsonChecklist = json_encode($checklist, JSON_UNESCAPED_UNICODE);
         $updateFields[] = "checklist = ?";
         $paramsUp[] = $novoJsonChecklist;
 
-        // 3.2. Recalcula progresso se não foi enviado manualmente
         if ($progresso === -1) { 
             $novoProgresso = $totalItens > 0 ? round(($concluidos / $totalItens) * 100) : 0;
         }
     }
     
-    // 4. Update de Arquivo (Geral da Tarefa) - Mantido para compatibilidade
+    // 4. Update de Arquivo (Geral da Tarefa)
     $caminhoArquivo = null;
     $nomeOriginal = null;
     if (isset($_FILES['arquivo_entrega']) && $_FILES['arquivo_entrega']['error'] === 0) {
@@ -108,7 +100,6 @@ try {
     }
 
     // 5. Monta o restante do UPDATE
-    
     if ($novoStatus) {
         $updateFields[] = "status = ?";
         $paramsUp[] = $novoStatus;
@@ -120,18 +111,19 @@ try {
         }
     }
     
-    // Salva o progresso recalculado ou o progresso manual (se não for CONCLUIDA)
     if ($novoProgresso >= 0 && $novoStatus !== 'CONCLUIDA') {
         $updateFields[] = "progresso = ?";
         $paramsUp[] = $novoProgresso;
     }
 
-    // Se Gestor está devolvendo, salva o feedback
-    if ($isGestor && ($novoStatus == 'PENDENTE' || $novoStatus == 'EM_ANDAMENTO') && !empty($feedback)) {
-        $updateFields[] = "feedback_revisao = ?";
-        $paramsUp[] = $feedback;
+    // [CORREÇÃO PRINCIPAL] Salva o feedback se for uma devolução ou revisão
+    // Isso cobre: Devolução para Colab (PENDENTE/ANDAMENTO) e Devolução para Gestor (REVISAO)
+    if ($isGestor && !empty($feedback)) {
+        if ($novoStatus == 'PENDENTE' || $novoStatus == 'EM_ANDAMENTO' || $novoStatus == 'EM_REVISAO') {
+            $updateFields[] = "feedback_revisao = ?";
+            $paramsUp[] = $feedback;
+        }
     } else if($isGestor && $novoStatus == 'CONCLUIDA') {
-        // Se o gestor está aprovando, garante que o feedback será limpado (já feito acima, mas reforçando)
         $updateFields[] = "feedback_revisao = NULL";
     }
 
@@ -155,21 +147,19 @@ try {
     
     // Mensagem de Transição de Status
     if ($novoStatus && $novoStatus !== $tarefa['status']) {
-        if ($novoStatus == 'EM_REVISAO') $msgFinal = "🚀 Enviou para revisão. " . $msgFinal;
-        if ($novoStatus == 'CONCLUIDA') $msgFinal = "✅ Aprovou e concluiu a tarefa. " . $msgFinal;
-        // Status de devolução
-        if ($novoStatus == 'EM_ANDAMENTO' && $tarefa['status'] == 'EM_REVISAO') {
-             $msgFinal = "⚠️ Devolveu para ajustes. " . $msgFinal;
-        }
+        if ($novoStatus == 'EM_REVISAO' && $tarefa['status'] == 'CONCLUIDA') $msgFinal = "⚠️ Líder solicitou refação. " . $msgFinal;
+        elseif ($novoStatus == 'EM_REVISAO') $msgFinal = "🚀 Enviou para revisão. " . $msgFinal;
+        elseif ($novoStatus == 'CONCLUIDA') $msgFinal = "✅ Aprovou e concluiu a tarefa. " . $msgFinal;
+        elseif ($novoStatus == 'EM_ANDAMENTO' && $tarefa['status'] == 'EM_REVISAO') $msgFinal = "⚠️ Devolveu para ajustes. " . $msgFinal;
     }
 
     // Se houver mensagem ou feedback, insere no histórico
     if (!empty(trim($msgFinal)) || (!empty($feedback) && $feedback !== $tarefa['feedback_revisao'])) {
         $comentario_historico = trim($msgFinal);
         
-        // Se Gestor enviou feedback, adiciona ao comentário de histórico
-        if(!empty($feedback) && ($novoStatus == 'PENDENTE' || $novoStatus == 'EM_ANDAMENTO')) {
-            $comentario_historico .= "\n\n[FEEDBACK DO GESTOR]: " . $feedback;
+        // Se Gestor/Líder enviou feedback (e não é aprovação), adiciona ao histórico
+        if(!empty($feedback) && ($novoStatus != 'CONCLUIDA')) {
+            $comentario_historico .= "\n\n[MOTIVO/FEEDBACK]: " . $feedback;
         }
 
         $stmtCom = $pdo->prepare("INSERT INTO comentario_tarefa (tarefa_id, usuario_id, mensagem, criado_em) VALUES (?, ?, ?, NOW())");

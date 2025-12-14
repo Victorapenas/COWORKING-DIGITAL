@@ -1,5 +1,4 @@
 <?php
-//atualização
 // ARQUIVO: public/minhas_tarefas.php
 require_once __DIR__ . '/../includes/seguranca.php';
 require_once __DIR__ . '/../includes/ui_auxiliar.php';
@@ -15,7 +14,7 @@ $isManager = in_array($papel, ['DONO', 'LIDER', 'GESTOR']);
 
 $pdo = conectar_db();
 
-// 1. Busca TAREFAS DE GESTÃO (Se for manager, busca tudo. Se não, array vazio)
+// --- 1. Busca TAREFAS DE GESTÃO (Se for manager, busca tudo. Se não, array vazio) ---
 $tarefasGestao = [];
 if ($isManager) {
     $sqlG = "SELECT t.*, p.nome as projeto_nome, u.nome as responsavel_nome, u.cargo_detalhe as responsavel_cargo, e.nome as equipe_nome
@@ -29,7 +28,7 @@ if ($isManager) {
     $tarefasGestao = $stmtG->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// 2. Busca TAREFAS PESSOAIS (Sempre busca, para qualquer usuário)
+// --- 2. Busca TAREFAS PESSOAIS (Execução) ---
 $sqlP = "SELECT t.*, p.nome as projeto_nome, u.nome as responsavel_nome, u.cargo_detalhe as responsavel_cargo
          FROM tarefa t 
          LEFT JOIN projeto p ON t.projeto_id = p.id
@@ -38,6 +37,14 @@ $sqlP = "SELECT t.*, p.nome as projeto_nome, u.nome as responsavel_nome, u.cargo
 $stmtP = $pdo->prepare($sqlP);
 $stmtP->execute([$usuario['id']]);
 $tarefasPessoais = $stmtP->fetchAll(PDO::FETCH_ASSOC);
+
+// --- 3. Busca PROJETOS (Para o modal de Nova Atividade Rápida) ---
+$listaProjetos = [];
+if ($isManager) {
+    $stmtProj = $pdo->prepare("SELECT id, nome FROM projeto WHERE empresa_id = ? AND ativo = 1 ORDER BY nome ASC");
+    $stmtProj->execute([$empresaId]);
+    $listaProjetos = $stmtProj->fetchAll(PDO::FETCH_ASSOC);
+}
 
 // Cálculo de KPIs Pessoais
 $statsPessoal = ['total'=>0, 'prog'=>0, 'done'=>0, 'late'=>0];
@@ -72,7 +79,7 @@ $listaEquipes = listarEquipes($empresaId);
         .view-btn.active { background: white; color: #2b3674; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .view-btn:hover:not(.active) { color: #4318FF; }
 
-        /* Estilos dos Cards (Reutilizando e Aprimorando) */
+        /* Estilos dos Cards */
         .filters-wrapper { background: white; padding: 20px; border-radius: 16px; border: 1px solid #f0f0f0; margin-bottom: 25px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
         .filter-item label { font-size: 0.85rem; font-weight: 700; color: #2b3674; margin-bottom: 8px; display: block; }
         
@@ -128,8 +135,8 @@ $listaEquipes = listarEquipes($empresaId);
             </div>
             
             <?php if($isManager): ?>
-                <button class="botao-primario" onclick="window.location.href = 'projetos.php'" style="padding:12px 25px; background: #4318FF;">
-                    <?= getIcone('adicionar') ?> Nova Atividade
+                <button class="botao-primario" onclick="abrirModalSelecaoProjeto()" style="padding:12px 25px; background: #4318FF;">
+                    <?= getIcone('adicionar') ?> Nova Tarefa Rápida
                 </button>
             <?php endif; ?>
         </div>
@@ -210,6 +217,25 @@ $listaEquipes = listarEquipes($empresaId);
 
     </div>
 
+    <div id="modalSelectProj" class="modal">
+        <div class="modal-content" style="width: 400px; text-align:center;">
+            <span class="close-btn" onclick="document.getElementById('modalSelectProj').style.display='none'">&times;</span>
+            <h3 style="color:#2b3674; margin-bottom:10px;">Nova Atividade</h3>
+            <p style="color:#666; margin-bottom:25px; font-size:0.9rem;">Selecione o projeto para criar a tarefa:</p>
+            
+            <div style="margin-bottom:25px;">
+                <select id="quickProjectSelect" class="campo-padrao" style="width:100%;">
+                    <option value="">-- Selecione o Projeto --</option>
+                    <?php foreach($listaProjetos as $p): ?>
+                        <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['nome']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            
+            <button class="botao-primario" onclick="avancarCriacaoTarefa()" style="width:100%;">Continuar</button>
+        </div>
+    </div>
+
     <?php require_once 'tarefa.php'; ?>
     
     <div id="modalExecucao" class="modal">
@@ -218,70 +244,68 @@ $listaEquipes = listarEquipes($empresaId);
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
                 <div>
                     <h3 id="execTitulo" style="margin:0; color:#2c3e50; font-size:1.4rem;">Detalhes da Atividade</h3>
-                    <div id="execCronograma" style="margin-top:10px;"></div> </div>
+                    <div id="execCronograma" style="margin-top:10px;"></div> 
+                </div>
                 <span id="execBadge" class="st-badge" style="font-size:0.9rem; padding:8px 15px;">STATUS</span>
             </div>
             
+            <form id="formEntrega" enctype="multipart/form-data">
+                <input type="hidden" name="tarefa_id" id="execId">
                 
-                <form id="formEntrega" enctype="multipart/form-data">
-                    <input type="hidden" name="tarefa_id" id="execId">
-                    
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px;">
-                        <div>
-                            <h4 style="color:#666; font-size:0.9rem; margin-bottom:10px;">Descrição da Atividade</h4>
-                            <div id="execDesc" style="background:#f8f9fa; padding:15px; border-radius:8px; font-size:0.9rem; color:#444; min-height:60px; margin-bottom:20px; border:1px solid #eee;"></div>
-                            
-                            <div id="execChecklistArea" style="margin-bottom: 20px; display:none;">
-                                <h4 style="color:#2b3674; font-size:0.9rem; margin-bottom:10px; display:flex; justify-content:space-between;">
-                                    Checklist de Etapas
-                                    <span id="execProgressoTexto" style="color:#0d6efd; font-weight:bold;">0%</span>
-                                </h4>
-                                <div id="listaChecklistColab" style="background:white; border:1px solid #eee; border-radius:10px; overflow:hidden;">
-                                    </div>
-                            </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px;">
+                    <div>
+                        <h4 style="color:#666; font-size:0.9rem; margin-bottom:10px;">Descrição da Atividade</h4>
+                        <div id="execDesc" style="background:#f8f9fa; padding:15px; border-radius:8px; font-size:0.9rem; color:#444; min-height:60px; margin-bottom:20px; border:1px solid #eee;"></div>
+                        
+                        <div id="execChecklistArea" style="margin-bottom: 20px; display:none;">
+                            <h4 style="color:#2b3674; font-size:0.9rem; margin-bottom:10px; display:flex; justify-content:space-between;">
+                                Checklist de Etapas
+                                <span id="execProgressoTexto" style="color:#0d6efd; font-weight:bold;">0%</span>
+                            </h4>
+                            <div id="listaChecklistColab" style="background:white; border:1px solid #eee; border-radius:10px; overflow:hidden;"></div>
+                        </div>
 
-                            <div class="form-group" id="groupProgressoManual">
-                                <label>Progresso Manual</label>
-                                <div style="display:flex; align-items:center; gap:10px;">
-                                    <input type="range" name="progresso" id="execProgresso" min="0" max="100" oninput="document.getElementById('lblProg').innerText = this.value + '%'">
-                                    <span id="lblProg" style="font-weight:bold; color:#0d6efd; width:40px;">0%</span>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Alterar Status</label>
-                                <select name="status" id="execStatus" class="campo-padrao">
-                                    <option value="PENDENTE">A Fazer</option>
-                                    <option value="EM_ANDAMENTO">Em Execução</option>
-                                    <option value="EM_REVISAO">Entregar (Revisão)</option>
-                                    <option value="CONCLUIDA">Concluído</option>
-                                </select>
+                        <div class="form-group" id="groupProgressoManual">
+                            <label>Progresso Manual</label>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <input type="range" name="progresso" id="execProgresso" min="0" max="100" oninput="document.getElementById('lblProg').innerText = this.value + '%'">
+                                <span id="lblProg" style="font-weight:bold; color:#0d6efd; width:40px;">0%</span>
                             </div>
                         </div>
 
-                        <div>
-                            <label>Entrega / Arquivos</label>
-                            <div class="upload-area" onclick="document.getElementById('fileInput').click()" style="border: 2px dashed #e0e0e0; padding: 20px; text-align: center; border-radius: 10px; cursor: pointer; background: #fafafa; margin-bottom: 15px;">
-                                <input type="file" name="arquivo_entrega" id="fileInput" style="display:none" onchange="previewUpload(this)">
-                                <div style="font-size:1.5rem; color:#aaa; margin-bottom:5px;"><?= getIcone('pasta') ?></div>
-                                <span id="uploadText" style="font-size:0.85rem; color:#666;">Clique para anexar arquivo</span>
-                            </div>
-                            <div class="form-group">
-                                <label>Comentário</label>
-                                <textarea name="comentario" rows="3" class="campo-padrao" placeholder="Atualização sobre o andamento..."></textarea>
-                            </div>
-                            <div id="execFeedbackArea" style="display:none; padding: 15px; border-left: 5px solid #ff9800; background-color: #fff3e0; margin-bottom: 20px; border-radius: 4px;">
-                                <h4 style="color: #ff9800; margin-top: 0; display: flex; align-items: center;">
-                                    <span style="font-size: 1.5em; margin-right: 10px;">⚠️</span>
-                                    Feedback do Gestor
-                                </h4>
-                                <p id="execFeedbackText" style="margin: 0; white-space: pre-wrap; font-size: 1em;"></p>
-                            </div>
-                            <button type="submit" class="botao-primario" style="width:100%;">Salvar Progresso</button>
+                        <div class="form-group">
+                            <label>Alterar Status</label>
+                            <select name="status" id="execStatus" class="campo-padrao">
+                                <option value="PENDENTE">A Fazer</option>
+                                <option value="EM_ANDAMENTO">Em Execução</option>
+                                <option value="EM_REVISAO">Entregar (Revisão)</option>
+                                <option value="CONCLUIDA">Concluído</option>
+                            </select>
                         </div>
                     </div>
-                </form>
-            </div>
+
+                    <div>
+                        <label>Entrega / Arquivos</label>
+                        <div class="upload-area" onclick="document.getElementById('fileInput').click()" style="border: 2px dashed #e0e0e0; padding: 20px; text-align: center; border-radius: 10px; cursor: pointer; background: #fafafa; margin-bottom: 15px;">
+                            <input type="file" name="arquivo_entrega" id="fileInput" style="display:none" onchange="previewUpload(this)">
+                            <div style="font-size:1.5rem; color:#aaa; margin-bottom:5px;"><?= getIcone('pasta') ?></div>
+                            <span id="uploadText" style="font-size:0.85rem; color:#666;">Clique para anexar arquivo</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Comentário</label>
+                            <textarea name="comentario" rows="3" class="campo-padrao" placeholder="Atualização sobre o andamento..."></textarea>
+                        </div>
+                        <div id="execFeedbackArea" style="display:none; padding: 15px; border-left: 5px solid #ff9800; background-color: #fff3e0; margin-bottom: 20px; border-radius: 4px;">
+                            <h4 style="color: #ff9800; margin-top: 0; display: flex; align-items: center;">
+                                <span style="font-size: 1.5em; margin-right: 10px;">⚠️</span>
+                                Feedback do Gestor
+                            </h4>
+                            <p id="execFeedbackText" style="margin: 0; white-space: pre-wrap; font-size: 1em;"></p>
+                        </div>
+                        <button type="submit" class="botao-primario" style="width:100%;">Salvar Progresso</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -289,6 +313,7 @@ $listaEquipes = listarEquipes($empresaId);
     <script src="../js/tarefas.js"></script> 
     <script src="../js/projetos.js"></script>
     <script>
+        // Funções para troca de abas e filtro
         function switchView(view, btn) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.getElementById('view-'+view).classList.add('active');
@@ -320,6 +345,41 @@ $listaEquipes = listarEquipes($empresaId);
                 });
             }
         }
+
+        // Scripts para a funcionalidade "Nova Tarefa Rápida"
+        function abrirModalSelecaoProjeto() {
+            document.getElementById('modalSelectProj').style.display = 'flex';
+        }
+
+        function avancarCriacaoTarefa() {
+            const projId = document.getElementById('quickProjectSelect').value;
+            if(!projId) {
+                alert("Por favor, selecione um projeto.");
+                return;
+            }
+            document.getElementById('modalSelectProj').style.display = 'none';
+            // Chama função global definida em tarefas.js
+            openTarefaModal(projId, null); 
+        }
+
+        // Captura clique vindo do Dashboard (URL param)
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const execId = params.get('abrir_execucao');
+            if(execId) {
+                // Busca detalhes da tarefa para abrir o modal de execução
+                fetch(`../api/tarefa_buscar.php?id=${execId}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if(data.ok && data.tarefa) {
+                            // Se encontrar, abre o modal de execução (minhas_tarefas.js)
+                            abrirModalExecucao(data.tarefa);
+                            // Limpa a URL para não reabrir ao recarregar
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        }
+                    });
+            }
+        });
     </script>
 </body>
 </html>
@@ -345,17 +405,17 @@ function renderCard($t, $podeEditar) {
 
     $iniciais = strtoupper(substr($t['responsavel_nome'], 0, 2));
     
-    // Ações: Se pode editar (Gestor) mostra Editar/Excluir. Senão, só "Ver Detalhes".
-    // A função abrirModalExecucao agora usará o JSON completo (incluindo checklist)
-    $actions = '<button class="btn-act btn-view" onclick=\'abrirModalExecucao('.$json.')\'>Ver Detalhes</button>';
+    // Ações:
+    // Para todos (incluindo Gestor quando age como executor): Ver Detalhes (Execução/Checklist)
+    $actions = '<button class="btn-act btn-view" onclick=\'abrirModalExecucao('.$json.')\'>Ver Checklist</button>';
     
+    // Se for modo gestão, adiciona edição completa
     if($podeEditar) {
         $actions .= '
         <button class="btn-act btn-edit" onclick=\'openTarefaModal(null, '.$t['id'].')\'>Editar</button>
         <button class="btn-act btn-del" onclick=\'confirmarExclusaoTarefa('.$t['id'].')\'>Excluir</button>';
     }
 
-    // Grid CSS para os botões se ajustarem
     $gridCols = $podeEditar ? '1fr 1fr 1fr' : '1fr';
 
     return '

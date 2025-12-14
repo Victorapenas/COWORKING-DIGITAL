@@ -1,6 +1,9 @@
 <?php
 // ARQUIVO: api/tarefa_criar.php
-ob_start(); ini_set('display_errors', 0); 
+// ATUALIZADO: Correção para salvar Horário exato e tratamento de erros
+
+ob_start(); 
+ini_set('display_errors', 0); 
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . '/../includes/funcoes.php'; 
@@ -20,19 +23,35 @@ try {
     $descricao = trim($_POST['descricao'] ?? '');
     $responsavelId = (int)($_POST['responsavel_id'] ?? 0);
     $prioridade = $_POST['prioridade'] ?? 'NORMAL';
+    
+    // --- CORREÇÃO DE DATA E HORÁRIO ---
     $prazo = !empty($_POST['prazo']) ? $_POST['prazo'] : null;
     
-    // CORREÇÃO AQUI: Padrão PENDENTE
-    $status = $_POST['status'] ?? 'PENDENTE'; 
-    if ($status === 'A_FAZER') $status = 'PENDENTE'; // Força correção se vier errado
-    
-    if (!$projetoId || empty($nome) || !$responsavelId) {
-        throw new Exception("Dados obrigatórios incompletos.");
+    if ($prazo) {
+        // O input type="datetime-local" envia o formato "YYYY-MM-DDTHH:MM"
+        // Precisamos substituir o "T" por espaço para o formato MySQL "YYYY-MM-DD HH:MM:SS"
+        $prazo = str_replace('T', ' ', $prazo);
+        
+        // Se a string tiver apenas data e hora (16 chars), adiciona os segundos
+        if (strlen($prazo) <= 16) {
+            $prazo .= ":00";
+        }
+        // Se por acaso vier só a data (legado), mantém a lógica de fim do dia (opcional)
+        elseif (strlen($prazo) <= 10) {
+            $prazo .= ' 23:59:59';
+        }
     }
     
-    if ($prazo) $prazo = $prazo . ' 23:59:59'; 
+    // Correção de status
+    $status = $_POST['status'] ?? 'PENDENTE'; 
+    if ($status === 'A_FAZER') $status = 'PENDENTE';
+    
+    // Validação
+    if (!$projetoId || empty($nome) || !$responsavelId) {
+        throw new Exception("Dados obrigatórios incompletos (Projeto, Nome ou Responsável).");
+    }
 
-    // Checklist
+    // Processamento do Checklist
     $checklistArray = processarChecklist(0, $_POST, $pdo);
     $checklistJson = empty($checklistArray) ? NULL : json_encode($checklistArray, JSON_UNESCAPED_UNICODE);
     

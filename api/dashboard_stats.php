@@ -1,7 +1,5 @@
 <?php
 // ARQUIVO: api/dashboard_stats.php
-// Objetivo: Fornecer dados segregados para o Dashboard (Visão Gestor vs Colaborador)
-
 ob_start();
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
@@ -25,11 +23,11 @@ try {
         'papel' => $papel,
         'usuario_nome' => $sessao['nome'],
         'kpis' => [],
-        'listas' => [],        // Projetos/Tarefas gerais (Gestor)
-        'pendencias' => [],    // APROVAÇÕES (Gestor - Tarefas EM_REVISAO)
-        'minhas_tarefas' => [], // Lista de execução (Colaborador)
-        'meus_projetos' => [],  // Atalhos (Colaborador)
-        'online_users' => [],
+        'listas' => [],              
+        'pendencias' => [],          
+        'concluidas_recentes' => [], 
+        'minhas_tarefas' => [],      
+        'agenda_dia' => [],          
         'grafico' => []
     ];
 
@@ -38,47 +36,62 @@ try {
     // =================================================================================
     if ($papel === 'DONO' || $papel === 'LIDER' || $papel === 'GESTOR') {
         
-        // 1. KPI: Itens para Revisar (Prioridade Máxima)
-        // Busca tarefas que os colaboradores marcaram como prontas (EM_REVISAO)
-        // Se for GESTOR, filtra pelos projetos que ele gerencia. Se for DONO, vê tudo da empresa.
         $filtroGestao = ($papel === 'GESTOR') ? "AND p.gestor_id = $usuarioId" : "AND t.empresa_id = $empresaId";
         
-        $sqlRevisao = "SELECT COUNT(*) FROM tarefa t 
-                       LEFT JOIN projeto p ON t.projeto_id = p.id 
-                       WHERE t.status = 'EM_REVISAO' $filtroGestao";
+        // 1. KPI: Pendências de Revisão
+        $sqlRevisao = "SELECT COUNT(*) FROM tarefa t LEFT JOIN projeto p ON t.projeto_id = p.id WHERE t.status = 'EM_REVISAO' $filtroGestao";
         $qtdRevisao = $pdo->query($sqlRevisao)->fetchColumn();
 
-        // 2. Outros KPIs
+        // 2. KPI: Tarefas em Andamento (Geral)
         $qtdAtivas = $pdo->query("SELECT COUNT(*) FROM tarefa t LEFT JOIN projeto p ON t.projeto_id = p.id WHERE t.status IN ('PENDENTE','EM_ANDAMENTO') $filtroGestao")->fetchColumn();
-        $qtdProjetos = $pdo->query("SELECT COUNT(*) FROM projeto p WHERE p.empresa_id = $empresaId AND p.status = 'EM_ANDAMENTO'")->fetchColumn();
+        
+        // 3. KPI: Projetos Ativos
+        $sqlProjetos = "SELECT COUNT(*) FROM projeto p WHERE p.empresa_id = $empresaId AND p.status = 'EM_ANDAMENTO' AND p.ativo = 1";
+        if ($papel === 'GESTOR') {
+             $sqlProjetos .= " AND p.gestor_id = $usuarioId";
+        }
+        $qtdProjetos = $pdo->query($sqlProjetos)->fetchColumn();
 
+        // Monta KPIs com Links para navegação dinâmica
         $response['kpis'] = [
-            ['titulo' => 'Para Aprovar', 'valor' => $qtdRevisao, 'icone' => 'alerta', 'cor' => 'red'], // Destaque Vermelho
-            ['titulo' => 'Em Andamento', 'valor' => $qtdAtivas, 'icone' => 'task', 'cor' => 'blue'],
-            ['titulo' => 'Projetos Ativos', 'valor' => $qtdProjetos, 'icone' => 'folder', 'cor' => 'purple']
+            ['titulo' => 'Para Aprovar', 'valor' => $qtdRevisao, 'icone' => 'alerta', 'cor' => 'red', 'link' => '#listaPendencias'], 
+            ['titulo' => 'Em Andamento', 'valor' => $qtdAtivas, 'icone' => 'task', 'cor' => 'blue', 'link' => 'minhas_tarefas.php'],
+            ['titulo' => 'Projetos Ativos', 'valor' => $qtdProjetos, 'icone' => 'folder', 'cor' => 'purple', 'link' => 'projetos.php']
         ];
 
-        // 3. LISTA DE APROVAÇÃO (O "Inbox" do Gestor)
+        // Lista de Pendências (Para Aprovação/Ajuste)
         $sqlPendencias = "SELECT t.id, t.titulo, u.nome as responsavel, t.status, t.prazo, p.nome as projeto_nome, t.checklist
                           FROM tarefa t 
                           JOIN usuario u ON t.responsavel_id = u.id 
                           LEFT JOIN projeto p ON t.projeto_id = p.id
                           WHERE t.status = 'EM_REVISAO' $filtroGestao
-                          ORDER BY t.atualizado_em ASC"; // As mais antigas primeiro
+                          ORDER BY t.atualizado_em ASC";
         
         $response['pendencias'] = $pdo->query($sqlPendencias)->fetchAll(PDO::FETCH_ASSOC);
 
-        // 4. Lista Geral de Acompanhamento (Tarefas da Equipe)
-        $response['listas'] = $pdo->query("
-            SELECT t.id, t.titulo, t.prioridade, t.prazo, u.nome as responsavel, t.status, t.progresso
-            FROM tarefa t 
-            LEFT JOIN projeto p ON t.projeto_id = p.id 
-            JOIN usuario u ON t.responsavel_id = u.id
-            WHERE t.status IN ('PENDENTE', 'EM_ANDAMENTO') $filtroGestao
-            ORDER BY t.prazo ASC LIMIT 10
-        ")->fetchAll(PDO::FETCH_ASSOC);
+        // Lista de Tarefas Concluídas Recentes (Para Auditoria do Líder ou Visualização do Gestor)
+        $sqlConcluidas = "SELECT t.id, t.titulo, u.nome as responsavel, t.concluida_em, p.nome as projeto_nome
+                          FROM tarefa t 
+                          JOIN usuario u ON t.responsavel_id = u.id 
+                          LEFT JOIN projeto p ON t.projeto_id = p.id
+                          WHERE t.status = 'CONCLUIDA' $filtroGestao
+                          ORDER BY t.concluida_em DESC LIMIT 10";
+        $response['concluidas_recentes'] = $pdo->query($sqlConcluidas)->fetchAll(PDO::FETCH_ASSOC);
 
-        // 5. Gráfico de Produtividade (Últimos 7 dias)
+        // Minhas Tarefas (Para execução pessoal do Gestor/Líder)
+        // Isso permite que o gestor também execute tarefas atribuídas a ele
+        $sqlMinhas = "SELECT t.id, t.titulo, t.prioridade, t.prazo, t.status, p.nome as projeto_nome
+                      FROM tarefa t 
+                      LEFT JOIN projeto p ON t.projeto_id = p.id
+                      WHERE t.responsavel_id = ? 
+                      AND t.status IN ('PENDENTE', 'EM_ANDAMENTO')
+                      ORDER BY t.prazo ASC LIMIT 5";
+                      
+        $stmtM = $pdo->prepare($sqlMinhas);
+        $stmtM->execute([$usuarioId]);
+        $response['minhas_tarefas'] = $stmtM->fetchAll(PDO::FETCH_ASSOC);
+
+        // Gráfico de Produtividade (Últimos 7 dias)
         $grafico = ['labels' => [], 'data' => []];
         for ($i = 6; $i >= 0; $i--) {
             $data = date('Y-m-d', strtotime("-$i days"));
@@ -95,55 +108,58 @@ try {
     // =================================================================================
     else {
         
-        // 1. Busca Tarefas do Colaborador
-        // Ordena por Prioridade e depois Prazo
-        // Inclui campo 'feedback_revisao' para mostrar se foi devolvida
+        $sqlKPI = "SELECT 
+            SUM(CASE WHEN status NOT IN ('CONCLUIDA', 'CANCELADA', 'EM_REVISAO') AND prazo < CURDATE() THEN 1 ELSE 0 END) as atrasadas,
+            SUM(CASE WHEN status IN ('PENDENTE', 'EM_ANDAMENTO') AND prioridade = 'URGENTE' THEN 1 ELSE 0 END) as urgentes,
+            SUM(CASE WHEN status = 'EM_ANDAMENTO' THEN 1 ELSE 0 END) as em_andamento,
+            SUM(CASE WHEN status = 'CONCLUIDA' AND DATE(concluida_em) = CURDATE() THEN 1 ELSE 0 END) as entregues_hoje
+            FROM tarefa WHERE responsavel_id = ?";
+            
+        $stmtKPI = $pdo->prepare($sqlKPI);
+        $stmtKPI->execute([$usuarioId]);
+        $kpis = $stmtKPI->fetch(PDO::FETCH_ASSOC);
+
+        $response['kpis'] = [
+            ['titulo' => 'Atrasadas', 'valor' => $kpis['atrasadas'] ?? 0, 'icone' => 'alerta', 'cor' => 'red', 'link' => '#'],
+            ['titulo' => 'Urgentes', 'valor' => $kpis['urgentes'] ?? 0, 'icone' => 'alerta', 'cor' => 'orange', 'link' => '#'],
+            ['titulo' => 'Em Andamento', 'valor' => $kpis['em_andamento'] ?? 0, 'icone' => 'play', 'cor' => 'blue', 'link' => '#'],
+            ['titulo' => 'Entregues Hoje', 'valor' => $kpis['entregues_hoje'] ?? 0, 'icone' => 'check_circle', 'cor' => 'green', 'link' => '#']
+        ];
+
+        // Lista inteligente: Prioriza Atrasadas > Urgentes > Hoje
         $sqlMinhas = "SELECT t.id, t.titulo, t.descricao, t.prioridade, t.prazo, t.status, 
                              t.checklist, t.tempo_total_minutos, t.progresso, t.feedback_revisao,
                              p.nome as projeto_nome
                       FROM tarefa t 
                       LEFT JOIN projeto p ON t.projeto_id = p.id
                       WHERE t.responsavel_id = ? 
-                      AND t.status IN ('PENDENTE', 'EM_ANDAMENTO', 'EM_REVISAO')
+                      AND t.status IN ('PENDENTE', 'EM_ANDAMENTO')
                       ORDER BY 
-                        CASE WHEN t.feedback_revisao IS NOT NULL AND t.status != 'EM_REVISAO' THEN 0 ELSE 1 END, 
-                        FIELD(t.prioridade, 'URGENTE', 'IMPORTANTE', 'NORMAL'), 
-                        t.prazo ASC";
+                        CASE 
+                            WHEN t.prazo < CURDATE() THEN 0 
+                            WHEN t.prioridade = 'URGENTE' THEN 1 
+                            WHEN DATE(t.prazo) = CURDATE() THEN 2
+                            ELSE 3 
+                        END, 
+                        t.prazo ASC
+                      LIMIT 30";
                       
         $stmtM = $pdo->prepare($sqlMinhas);
         $stmtM->execute([$usuarioId]);
         $response['minhas_tarefas'] = $stmtM->fetchAll(PDO::FETCH_ASSOC);
-
-        // 2. KPIs Pessoais
-        $pendentes = 0;
-        $revisao = 0;
-        $devolvidas = 0;
-
-        foreach ($response['minhas_tarefas'] as $t) {
-            if ($t['status'] == 'EM_REVISAO') $revisao++;
-            elseif (!empty($t['feedback_revisao'])) $devolvidas++;
-            else $pendentes++;
-        }
         
-        $concluidasMes = $pdo->query("SELECT COUNT(*) FROM tarefa WHERE responsavel_id = $usuarioId AND status = 'CONCLUIDA' AND MONTH(concluida_em) = MONTH(CURRENT_DATE())")->fetchColumn();
-
-        $response['kpis'] = [
-            ['titulo' => 'A Fazer', 'valor' => $pendentes, 'icone' => 'task', 'cor' => 'blue'],
-            ['titulo' => 'Em Revisão', 'valor' => $revisao, 'icone' => 'clock', 'cor' => 'orange'],
-            ['titulo' => 'Devolvidas', 'valor' => $devolvidas, 'icone' => 'alerta', 'cor' => 'red'], // Atenção!
-            ['titulo' => 'Entregues (Mês)', 'valor' => $concluidasMes, 'icone' => 'check', 'cor' => 'green']
-        ];
-
-        // 3. Gráfico de Entregas Pessoais
-        $grafico = ['labels' => [], 'data' => []];
-        for ($i = 6; $i >= 0; $i--) {
-            $data = date('Y-m-d', strtotime("-$i days"));
-            $dia = date('d/m', strtotime("-$i days"));
-            $qtd = $pdo->query("SELECT COUNT(*) FROM tarefa WHERE responsavel_id = $usuarioId AND status = 'CONCLUIDA' AND DATE(concluida_em) = '$data'")->fetchColumn();
-            $grafico['labels'][] = $dia;
-            $grafico['data'][] = $qtd;
-        }
-        $response['grafico'] = $grafico;
+        $sqlAgenda = "SELECT t.id, t.titulo, t.prazo, t.status, t.prioridade, p.nome as projeto_nome
+                      FROM tarefa t 
+                      LEFT JOIN projeto p ON t.projeto_id = p.id
+                      WHERE t.responsavel_id = ? 
+                      AND t.status NOT IN ('CONCLUIDA', 'CANCELADA', 'EM_REVISAO')
+                      AND (t.prazo IS NULL OR DATE(t.prazo) <= CURDATE())
+                      ORDER BY t.prazo ASC";
+        $stmtAg = $pdo->prepare($sqlAgenda);
+        $stmtAg->execute([$usuarioId]);
+        $response['agenda_dia'] = $stmtAg->fetchAll(PDO::FETCH_ASSOC);
+        
+        $response['grafico'] = null; 
     }
 
     ob_clean(); 

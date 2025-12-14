@@ -1,5 +1,5 @@
 // ARQUIVO: js/projetos.js
-//atualização
+// ATUALIZADO: Correção visual, lógica de abas e adição de links
 
 document.addEventListener('DOMContentLoaded', () => {
     const modalProjeto = document.getElementById('modalProjeto');
@@ -10,37 +10,26 @@ document.addEventListener('DOMContentLoaded', () => {
         if (modalProjeto) {
             modalProjeto.style.display = 'flex';
             
-            // Reset do Formulário
+            // 1. Reset do Formulário
             const form = document.getElementById('formCriarProjeto');
             if(form) form.reset();
             
-            // Limpa inputs ocultos de remoção de arquivo (se houver de edições anteriores)
+            // 2. Limpa elementos dinâmicos
             document.querySelectorAll('.input-remove-file').forEach(e => e.remove());
-            
-            // Título e ID
-            const title = document.getElementById('modalTitle');
-            if(title) title.innerText = "Novo Projeto";
-            
-            const pId = document.getElementById('projId');
-            if(pId) pId.value = ""; 
-            
-            // Limpa prévia de logo
             const logoPrev = document.getElementById('logo_preview');
             if(logoPrev) logoPrev.innerText = "";
 
-            // Limpa links públicos e container de arquivos
             const linkPub = document.getElementById('containerLinksPublicos');
             if(linkPub) linkPub.innerHTML = "";
             const arqPub = document.getElementById('arquivosAtuaisPublicos');
             if(arqPub) arqPub.innerHTML = "";
             
-            // Limpa links privados e container de arquivos privados
-            const linkPriv = document.getElementById('containerLinksPrivados');
-            if(linkPriv) linkPriv.innerHTML = "";
+            const contPriv = document.getElementById('containerLinksPrivados');
+            if(contPriv) contPriv.innerHTML = "";
             const arqPriv = document.getElementById('arquivosAtuaisPrivados');
             if(arqPriv) arqPriv.innerHTML = "";
 
-            // Limpa Dropdown de Equipes
+            // 3. Reset Dropdown Equipes
             const hiddenInputs = document.getElementById('hiddenEquipesInputs');
             if(hiddenInputs) hiddenInputs.innerHTML = ""; 
             
@@ -50,30 +39,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 triggerText.style.color = "#999";
                 triggerText.style.fontWeight = "400";
             }
-
-            // Remove classe 'selected' das opções
             document.querySelectorAll('.custom-option').forEach(op => op.classList.remove('selected'));
 
-            // Reseta abas para a primeira
-            const firstTab = document.querySelector('.modal-tab');
+            // 4. Configuração Inicial
+            const title = document.getElementById('modalTitle');
+            if(title) title.innerText = "Novo Projeto";
+            
+            const pId = document.getElementById('projId');
+            if(pId) pId.value = ""; 
+            
+            // 5. Vai para a aba inicial
+            const firstTab = document.querySelector('.modal-tab[data-target="tab-info"]');
             if(firstTab) switchFormTab('info', firstTab);
         }
     }
 
     // --- FUNÇÃO PARA ABRIR MODAL DE EDIÇÃO ---
-    // Adicionado parâmetro opcional abaInicial e tituloContexto
     window.abrirModalEditarProjeto = function(proj, abaInicial = 'info', tituloContexto = 'editar') {
         if (modalProjeto) {
-            modalProjeto.style.display = 'flex';
-            const title = document.getElementById('modalTitle');
+            openModal(); // Reseta tudo primeiro
             
-            // Define o título do modal com base no contexto
+            const title = document.getElementById('modalTitle');
             if (title) {
-                if (tituloContexto === 'adicionar_arquivos') {
-                    title.innerText = "Adicionar Arquivos/Links";
-                } else {
-                    title.innerText = "Editar Projeto";
-                }
+                title.innerText = (tituloContexto === 'adicionar_arquivos') ? "Adicionar Arquivos/Links" : "Editar Projeto";
             }
             
             // Preencher Campos
@@ -86,17 +74,9 @@ document.addEventListener('DOMContentLoaded', () => {
             setVal('projFim', proj.data_fim || '');
             setVal('projStatus', proj.status);
 
-            // Resetar inputs de remoção de arquivos antigos
-            document.querySelectorAll('.input-remove-file').forEach(e => e.remove());
-
-            // --- PREENCHER EQUIPES (DROPDOWN) ---
-            const hiddenInputs = document.getElementById('hiddenEquipesInputs');
-            if(hiddenInputs) hiddenInputs.innerHTML = "";
-            document.querySelectorAll('.custom-option').forEach(op => op.classList.remove('selected'));
-            
+            // Preencher Equipes
             if (proj.equipes && Array.isArray(proj.equipes)) {
                 proj.equipes.forEach(eq => {
-                    // O backend pode retornar objeto {id, nome} ou apenas ID
                     const idBusca = (typeof eq === 'object') ? eq.id : eq;
                     const option = document.querySelector(`.custom-option[data-value="${idBusca}"]`);
                     if(option) option.classList.add('selected');
@@ -104,104 +84,108 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(typeof atualizarInputsEquipe === 'function') atualizarInputsEquipe(); 
             }
 
-            // --- RENDERIZAR ARQUIVOS EXISTENTES (PÚBLICOS) ---
+            // Renderizar Listas Existentes
             renderizarArquivosExistentes(proj.links, 'arquivosAtuaisPublicos');
-
-            // --- RENDERIZAR ARQUIVOS EXISTENTES (PRIVADOS) ---
             renderizarArquivosExistentes(proj.privados, 'arquivosAtuaisPrivados');
 
-            // --- RENDERIZAR LINKS DE TEXTO (PÚBLICOS) ---
-            const containerPub = document.getElementById('containerLinksPublicos');
-            if(containerPub) {
-                containerPub.innerHTML = "";
-                if (proj.links && Array.isArray(proj.links)) {
-                    proj.links.forEach(l => {
-                        if (l.tipo === 'link') addLinkInput('containerLinksPublicos', false, l.titulo, l.url);
-                    });
-                }
-            }
-
-            // --- RENDERIZAR LINKS DE TEXTO (PRIVADOS) ---
-            const containerPriv = document.getElementById('containerLinksPrivados');
-            if (containerPriv) {
-                containerPriv.innerHTML = "";
-                if (proj.privados && Array.isArray(proj.privados)) {
-                    proj.privados.forEach(l => {
-                        if (l.tipo === 'link') addLinkInput('containerLinksPrivados', true, l.titulo, l.url);
-                    });
-                }
-            }
+            // Recriar Links de Texto (Públicos e Privados)
+            if (proj.links) proj.links.forEach(l => { if(l.tipo === 'link') addLinkInput('containerLinksPublicos', false, l.titulo, l.url); });
+            if (proj.privados) proj.privados.forEach(l => { if(l.tipo === 'link') addLinkInput('containerLinksPrivados', true, l.titulo, l.url); });
             
-            // Selecionar a aba inicial
-            const targetTabElement = document.querySelector(`#modalProjeto .modal-tab[onclick*="switchFormTab('${abaInicial}'"]`);
-            if (targetTabElement) {
-                // Chama a função global definida em projeto_detalhes.php
-                switchFormTab(abaInicial, targetTabElement); 
-            } else {
-                // Fallback para a primeira aba (info)
-                const firstTab = document.querySelector('.modal-tab');
-                if(firstTab) switchFormTab('info', firstTab);
-            }
+            // Selecionar aba específica
+            const targetTabElement = document.querySelector(`.modal-tab[data-target="tab-${abaInicial}"]`);
+            if (targetTabElement) switchFormTab(abaInicial, targetTabElement);
         }
     }
 
-    // --- NOVA FUNÇÃO AUXILIAR: LISTAR ARQUIVOS PARA EDIÇÃO/EXCLUSÃO ---
+    // --- LÓGICA DE ABAS (CORRIGIDA) ---
+    window.switchFormTab = function(tabName, btn) {
+        // Remove active de todas as abas e painéis
+        document.querySelectorAll('#modalProjeto .tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('#modalProjeto .modal-tab').forEach(b => b.classList.remove('active'));
+        
+        // Ativa o alvo
+        const targetPanel = document.getElementById('tab-' + tabName);
+        if(targetPanel) targetPanel.classList.add('active');
+        
+        if(btn) btn.classList.add('active');
+    };
+
+    // --- FUNÇÃO PARA ADICIONAR LINKS (ESTILO BONITINHO) ---
+    window.addLinkInput = function(containerId, isPrivado = false, valTitulo = '', valUrl = '') {
+        const container = document.getElementById(containerId);
+        if(!container) return; 
+
+        const nameTit = isPrivado ? 'link_priv_titulo[]' : 'link_titulo[]';
+        const nameUrl = isPrivado ? 'link_priv_url[]' : 'link_url[]';
+        
+        const div = document.createElement('div');
+        div.className = 'link-row'; // Usa classe CSS definida no PHP
+        
+        div.innerHTML = `
+            <div style="flex:1;">
+                <input type="text" name="${nameTit}" value="${valTitulo}" class="campo-padrao" placeholder="Título do Link (Ex: Drive)" style="margin-bottom:5px!important;">
+                <input type="text" name="${nameUrl}" value="${valUrl}" class="campo-padrao" placeholder="https://..." style="margin-bottom:0!important;">
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" class="btn-remove-link" title="Remover">&times;</button>
+        `;
+        container.appendChild(div);
+    }
+
+    // --- LISTAR ARQUIVOS EXISTENTES (Visual Bonito) ---
     window.renderizarArquivosExistentes = function(lista, containerId) {
         const container = document.getElementById(containerId);
         if(!container) return;
-        
-        container.innerHTML = ''; // Limpa lista anterior
+        container.innerHTML = ''; 
         
         if (lista && Array.isArray(lista)) {
             let filesFound = false;
             lista.forEach(item => {
-                // Filtra apenas o que é arquivo físico (ignora links e logos se necessário)
                 if (item.tipo === 'arquivo' || item.tipo === 'logo') {
                     filesFound = true;
-                    
                     const div = document.createElement('div');
-                    div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:white; padding:8px; margin-bottom:5px; border:1px solid #eee; border-radius:6px; font-size:0.85rem;';
+                    div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:white; padding:10px; margin-bottom:5px; border:1px solid #e0e5f2; border-radius:8px; font-size:0.9rem;';
                     
                     div.innerHTML = `
-                        <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
-                            <span style="color:#6A66FF;">📄</span>
-                            <a href="${item.url}" target="_blank" style="text-decoration:none; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:250px;">
+                        <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
+                            <span style="color:#6A66FF; font-size:1.2rem;">📄</span>
+                            <a href="${item.url}" target="_blank" style="text-decoration:none; color:#2b3674; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:250px;">
                                 ${item.titulo}
                             </a>
                         </div>
-                        <button type="button" class="btn-remove-file" style="color:#e74c3c; background:none; border:none; cursor:pointer; font-weight:bold; font-size:0.8rem;">Excluir</button>
+                        <button type="button" class="btn-remove-file" style="color:#e74c3c; background:none; border:none; cursor:pointer; font-weight:bold;">Excluir</button>
                     `;
 
-                    // Lógica do botão excluir
-                    const btn = div.querySelector('.btn-remove-file');
-                    btn.onclick = function() {
-                        // Efeito visual de riscado
+                    div.querySelector('.btn-remove-file').onclick = function() {
                         div.style.opacity = '0.5';
                         div.style.textDecoration = 'line-through';
-                        btn.remove(); // Remove o botão para não clicar de novo
-                        
-                        // Cria input hidden para avisar o PHP para remover este arquivo
+                        this.remove();
                         const input = document.createElement('input');
                         input.type = 'hidden';
                         input.name = 'remover_arquivos[]';
                         input.className = 'input-remove-file';
-                        input.value = item.url; // O caminho do arquivo é a chave para exclusão
+                        input.value = item.url;
                         document.getElementById('formCriarProjeto').appendChild(input);
                     };
-
                     container.appendChild(div);
                 }
             });
             
             if(!filesFound) {
-                container.innerHTML = '<small style="color:#aaa;">Nenhum arquivo anexado.</small>';
+                container.innerHTML = '<small style="color:#aaa; display:block; padding:5px;">Nenhum arquivo anexado.</small>';
             }
         }
     }
 
-    // --- FUNÇÕES AUXILIARES DE UI ---
-    window.closeModal = function() { if (modalProjeto) modalProjeto.style.display = 'none'; }
-    window.fecharModalExcluir = function() { if (modalDel) modalDel.style.display = 'none'; }
+    // --- UI HELPERS ---
+    window.closeModal = function(id) { 
+        const modal = document.getElementById(id);
+        if(modal) modal.style.display = 'none'; 
+    }
+    window.fecharModalExcluir = function() { 
+        const modal = document.getElementById('modalExcluir');
+        if(modal) modal.style.display = 'none'; 
+    }
 
     window.switchMainTab = function(tab, btn) {
         document.querySelectorAll('.main-tab-content').forEach(d => d.style.display = 'none');
@@ -210,10 +194,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.tabs-header .tab-btn').forEach(b => b.classList.remove('active'));
         if(btn) btn.classList.add('active');
     }
-
     window.previewFile = function(input) {
         const preview = document.getElementById('logo_preview');
-        if(preview && input.files && input.files[0]) preview.innerText = "Arquivo: " + input.files[0].name;
+        if(preview && input.files && input.files[0]) preview.innerText = "Selecionado: " + input.files[0].name;
     }
 
     window.filtrarProjetos = function() {
@@ -254,23 +237,50 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) { alert("Erro de conexão."); } finally { window.fecharModalExcluir(); }
     }
 
-    window.addLinkInput = function(containerId, isPrivado = false, valTitulo = '', valUrl = '') {
-        const container = document.getElementById(containerId);
-        if(!container) return; 
+    // --- Lógica do Dropdown Multi-Select ---
+    const selectWrapper = document.querySelector('.custom-select-wrapper');
+    if (selectWrapper) {
+        selectWrapper.addEventListener('click', function() {
+            this.querySelector('.custom-select').classList.toggle('open');
+        });
+    }
+    document.querySelectorAll('.custom-option').forEach(option => {
+        option.addEventListener('click', function() {
+            this.classList.toggle('selected');
+            atualizarInputsEquipe();
+        });
+    });
 
-        const nameTit = isPrivado ? 'link_priv_titulo[]' : 'link_titulo[]';
-        const nameUrl = isPrivado ? 'link_priv_url[]' : 'link_url[]';
-        const div = document.createElement('div');
-        div.style.cssText = 'display:flex; gap:10px; margin-bottom:5px; align-items:center;';
-        div.innerHTML = `
-            <input type="text" name="${nameTit}" value="${valTitulo}" placeholder="Título" style="flex:1; padding:10px; border:1px solid #eee; border-radius:8px;">
-            <input type="text" name="${nameUrl}" value="${valUrl}" placeholder="URL" style="flex:2; padding:10px; border:1px solid #eee; border-radius:8px;">
-            <button type="button" onclick="this.parentElement.remove()" style="border:none; background:none; cursor:pointer; color:#e74c3c; font-size:1.2rem;">&times;</button>
-        `;
-        container.appendChild(div);
+    window.atualizarInputsEquipe = function() {
+        const selected = document.querySelectorAll('.custom-option.selected');
+        const container = document.getElementById('hiddenEquipesInputs');
+        const text = document.getElementById('equipeTriggerText');
+        
+        if(!container || !text) return;
+
+        container.innerHTML = '';
+        let names = [];
+        selected.forEach(opt => {
+            names.push(opt.textContent.trim());
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'equipes[]';
+            input.value = opt.getAttribute('data-value');
+            container.appendChild(input);
+        });
+        
+        if(names.length > 0) {
+            text.textContent = names.join(', ');
+            text.style.color = '#333';
+            text.style.fontWeight = '600';
+        } else {
+            text.textContent = 'Selecione as equipes...';
+            text.style.color = '#999';
+            text.style.fontWeight = '400';
+        }
     }
 
-    // --- SUBMISSÃO DO FORMULÁRIO ---
+    // --- SUBMISSÃO ---
     const formProj = document.getElementById('formCriarProjeto');
     if (formProj) {
         formProj.addEventListener('submit', async (e) => {
@@ -293,19 +303,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     json = JSON.parse(textResp);
                 } catch (parseErr) {
                     console.error("Resposta bruta do servidor:", textResp);
-                    throw new Error("Resposta inválida do servidor. Verifique o console.");
+                    throw new Error("Resposta inválida do servidor (provavelmente erro PHP). Verifique o console.");
                 }
 
                 if (json.ok) {
                     window.location.reload();
                 } else {
-                    alert(json.erro || "Erro desconhecido ao salvar projeto.");
+                    alert(json.erro || "Erro ao salvar.");
                 }
-            } catch (err) { 
-                alert("Erro: " + err.message); 
-            } finally {
-                btn.disabled = false; btn.textContent = txtOriginal;
-            }
+            } catch (err) { alert("Erro: " + err.message); } 
+            finally { btn.disabled = false; btn.textContent = txtOriginal; }
         });
     }
 });

@@ -1,8 +1,12 @@
 <?php
-//atualização
 // ARQUIVO: api/projeto_criar.php
+// ATUALIZADO: Tratamento de erros robusto e limpeza de buffer para evitar JSON inválido
+
+// 1. Inicia o buffer para capturar qualquer saída indesejada (erros/avisos)
 ob_start(); 
 ini_set('display_errors', 0); 
+error_reporting(E_ALL);
+
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . '/funcoes_api.php'; 
@@ -12,39 +16,36 @@ try {
     if (!esta_logado()) throw new Exception("Sessão expirada.");
     $sessao = $_SESSION[SESSAO_USUARIO_KEY];
     
-    // Permissões
     if (!in_array($sessao['papel'], ['DONO', 'LIDER', 'GESTOR'])) {
         throw new Exception("Permissão negada.");
     }
 
-    // AÇÃO: CRIAÇÃO. NENHUM ID é necessário neste ponto.
-
-    // Coleta dados Básicos
-    $empresaId = getEmpresaIdLogado($sessao); // ID da empresa para vinculação
+    $empresaId = getEmpresaIdLogado($sessao);
     $nome = trim($_POST['nome'] ?? '');
-    $cliente = trim($_POST['cliente'] ?? '');
-    $desc = trim($_POST['descricao'] ?? '');
-    $inicio = !empty($_POST['data_inicio']) ? $_POST['data_inicio'] : null;
-    $fim = !empty($_POST['data_fim']) ? $_POST['data_fim'] : null;
-    $status = $_POST['status'] ?? 'PLANEJADO';
-
-    // Validação Mínima
-    if (empty($nome)) throw new Exception("O nome do projeto é obrigatório.");
     
-    // Equipes: Recebe array ou string
+    if (empty($nome)) throw new Exception("O nome do projeto é obrigatório.");
+
+    // Tratamento seguro das datas (envia NULL se estiver vazio)
+    $inicio = !empty($_POST['data_inicio']) ? $_POST['data_inicio'] : null;
+    $fim    = !empty($_POST['data_fim']) ? $_POST['data_fim'] : null;
+    
+    // Tratamento seguro de Equipes (pode não vir nada, ou vir como array/string)
     $equipes = [];
     if (isset($_POST['equipes'])) {
-        $equipes = is_array($_POST['equipes']) ? $_POST['equipes'] : explode(',', $_POST['equipes']);
+        if (is_array($_POST['equipes'])) {
+            $equipes = $_POST['equipes'];
+        } else {
+            $equipes = explode(',', $_POST['equipes']);
+        }
     }
 
     $pdo = conectar_db();
 
-    // 1. Inicializa Links e Arquivos (Projeto Novo)
-    // Não precisa buscar dados antigos. Começa com arrays vazios.
+    // Arrays vazios para links e arquivos (Projeto Novo)
     $novosLinks = [];
     $novosPrivados = [];
 
-    // 2. Adiciona Novos Links de Texto (Lógica reusada)
+    // 2. Adiciona Novos Links de Texto (se houver)
     if (isset($_POST['link_titulo'])) {
         foreach ($_POST['link_titulo'] as $i => $titulo) {
             if (!empty($titulo)) {
@@ -68,14 +69,16 @@ try {
         }
     }
     
-    // 3. Upload de Novos Arquivos (Lógica reusada)
+    // 3. Upload de Arquivos
     $uploadDir = __DIR__ . '/../public/uploads/projetos/';
     if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
     
+    // Arquivos Públicos
     if (isset($_FILES['docs_publicos'])) {
         foreach ($_FILES['docs_publicos']['name'] as $i => $name) {
             if ($_FILES['docs_publicos']['error'][$i] === 0) {
-                $novoNome = 'doc_' . uniqid() . '.' . pathinfo($name, PATHINFO_EXTENSION);
+                $ext = pathinfo($name, PATHINFO_EXTENSION);
+                $novoNome = 'doc_' . uniqid() . '.' . $ext;
                 if (move_uploaded_file($_FILES['docs_publicos']['tmp_name'][$i], $uploadDir . $novoNome)) {
                     $novosLinks[] = [
                         'titulo' => $name, 
@@ -86,10 +89,13 @@ try {
             }
         }
     }
+    
+    // Arquivos Privados
     if (isset($_FILES['docs_privados'])) {
         foreach ($_FILES['docs_privados']['name'] as $i => $name) {
             if ($_FILES['docs_privados']['error'][$i] === 0) {
-                $novoNome = 'priv_' . uniqid() . '.' . pathinfo($name, PATHINFO_EXTENSION);
+                $ext = pathinfo($name, PATHINFO_EXTENSION);
+                $novoNome = 'priv_' . uniqid() . '.' . $ext;
                 if (move_uploaded_file($_FILES['docs_privados']['tmp_name'][$i], $uploadDir . $novoNome)) {
                     $novosPrivados[] = [
                         'titulo' => $name, 
@@ -101,42 +107,45 @@ try {
         }
     }
 
-    // 4. INSERT SQL Principal (MUDANÇA AQUI)
-    // Insere os dados e as strings JSON dos links/arquivos
+    // 4. INSERT SQL Principal
     $sql = "INSERT INTO projeto 
                 (empresa_id, nome, cliente_nome, descricao, data_inicio, data_fim, status, links_externos, arquivos_privados, criado_em, atualizado_em)
             VALUES 
                 (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
             
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([
-        $empresaId, // Adicionado para vincular à empresa
+    $params = [
+        $empresaId,
         $nome, 
-        $cliente, 
-        $desc, 
+        trim($_POST['cliente'] ?? ''), 
+        trim($_POST['descricao'] ?? ''), 
         $inicio, 
         $fim, 
-        $status, 
-        json_encode(array_values($novosLinks)),
+        $_POST['status'] ?? 'PLANEJADO', 
+        json_encode(array_values($novosLinks)), // Envia JSON, mesmo que vazio
         json_encode(array_values($novosPrivados))
-    ]);
+    ];
 
-    // 5. OBTÉM o ID recém-criado (MUDANÇA AQUI)
+    if (!$stmt->execute($params)) {
+        throw new Exception("Erro ao salvar no banco de dados.");
+    }
+
     $novoId = $pdo->lastInsertId();
-    if (!$novoId) throw new Exception("Falha ao obter ID do novo projeto.");
 
-    // 6. Insere Equipes usando o NOVO ID (MUDANÇA AQUI)
-    // Não precisa de DELETE, pois o projeto é novo.
+    // 5. Inserção de Equipes
     if (!empty($equipes)) {
         $stmtEq = $pdo->prepare("INSERT INTO projeto_equipe (projeto_id, equipe_id) VALUES (?, ?)");
         foreach ($equipes as $eqId) {
-            if($eqId) $stmtEq->execute([$novoId, $eqId]); // Usa $novoId
+            if((int)$eqId > 0) $stmtEq->execute([$novoId, $eqId]);
         }
     }
 
+    // Limpa o buffer para garantir que SÓ O JSON seja enviado
+    ob_end_clean();
     echo json_encode(['ok' => true, 'id' => $novoId, 'mensagem' => 'Projeto criado com sucesso!']);
 
 } catch (Exception $e) {
+    ob_end_clean(); // Limpa buffer de erro também antes de enviar a resposta
     http_response_code(400);
     echo json_encode(['ok' => false, 'erro' => $e->getMessage()]);
 }

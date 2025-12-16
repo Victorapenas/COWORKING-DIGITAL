@@ -60,16 +60,26 @@ try {
     $nomeOriginal = null;
     
     if (isset($_FILES['arquivo_entrega']) && $_FILES['arquivo_entrega']['error'] === 0) {
-        $uploadDir = __DIR__ . '/../public/uploads/entregas/';
-        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+        // Caminho absoluto para evitar erros de referência
+        $uploadBase = __DIR__ . '/../public/uploads/entregas/';
+        
+        // Garante que a pasta existe
+        if (!is_dir($uploadBase)) {
+            if (!mkdir($uploadBase, 0777, true)) {
+                throw new Exception("Erro ao criar pasta de uploads no servidor.");
+            }
+        }
         
         $ext = pathinfo($_FILES['arquivo_entrega']['name'], PATHINFO_EXTENSION);
         $nomeOriginal = $_FILES['arquivo_entrega']['name'];
         // Nome único para evitar sobrescrita
         $novoNome = 'entrega_' . $tarefaId . '_' . uniqid() . '.' . $ext;
         
-        if (move_uploaded_file($_FILES['arquivo_entrega']['tmp_name'], $uploadDir . $novoNome)) {
+        if (move_uploaded_file($_FILES['arquivo_entrega']['tmp_name'], $uploadBase . $novoNome)) {
+            // Salva o caminho relativo a partir de 'public/' para o banco
             $caminhoArquivo = 'uploads/entregas/' . $novoNome;
+        } else {
+            throw new Exception("Falha ao mover o arquivo enviado.");
         }
     }
 
@@ -89,9 +99,7 @@ try {
                 $item['concluido'] = in_array($index, $checklistDone) ? 1 : 0; 
             }
             
-            // Se for item de Arquivo ou Link, MANTÉM o estado atual do banco
-            // (pois o upload/link é feito via API separada ou mantido se já existia)
-            // A menos que queiramos forçar algo aqui, mas o ideal é preservar.
+            // Se for item de Arquivo ou Link, MANTÉM o estado atual do banco (não sobrescreve com vazio)
             
             // Contagem para progresso
             if (!empty($item['concluido'])) {
@@ -111,7 +119,7 @@ try {
     } else {
         // Se não tem checklist, usa o progresso manual enviado
         $novoProgresso = ($progresso === -1) ? 0 : $progresso;
-        $novoJsonChecklist = $tarefa['checklist']; // Mantém o atual (vazio ou null)
+        $novoJsonChecklist = $tarefa['checklist']; // Mantém o atual
     }
 
     // Se concluiu, força 100%
@@ -146,7 +154,7 @@ try {
     $stmtUp = $pdo->prepare($sqlUp);
     $stmtUp->execute($paramsUp);
 
-    // 6. Registro no Histórico (Comentários)
+    // 6. Registro no Histórico (Comentários) - SEM EMOJIS
     $msgFinal = $comentario;
     
     // Adiciona anexo ao texto do histórico se houver upload geral
@@ -154,12 +162,12 @@ try {
         $msgFinal .= "\n\n[ARQUIVO_ANEXO]:$caminhoArquivo:$nomeOriginal";
     }
     
-    // Log automático de mudança de status
+    // Log automático de mudança de status (Texto limpo)
     if ($novoStatus && $novoStatus !== $tarefa['status']) {
-        if ($novoStatus == 'EM_REVISAO' && $tarefa['status'] == 'CONCLUIDA') $msgFinal = "⚠️ Líder solicitou refação. " . $msgFinal;
-        elseif ($novoStatus == 'EM_REVISAO') $msgFinal = "🚀 Enviou para revisão. " . $msgFinal;
-        elseif ($novoStatus == 'CONCLUIDA') $msgFinal = "✅ Aprovou e concluiu a tarefa. " . $msgFinal;
-        elseif ($novoStatus == 'EM_ANDAMENTO' && $tarefa['status'] == 'EM_REVISAO') $msgFinal = "⚠️ Devolveu para ajustes. " . $msgFinal;
+        if ($novoStatus == 'EM_REVISAO' && $tarefa['status'] == 'CONCLUIDA') $msgFinal = "Líder solicitou refação. " . $msgFinal;
+        elseif ($novoStatus == 'EM_REVISAO') $msgFinal = "Enviou para revisão. " . $msgFinal;
+        elseif ($novoStatus == 'CONCLUIDA') $msgFinal = "Aprovou e concluiu a tarefa. " . $msgFinal;
+        elseif ($novoStatus == 'EM_ANDAMENTO' && $tarefa['status'] == 'EM_REVISAO') $msgFinal = "Devolveu para ajustes. " . $msgFinal;
         else $msgFinal = "[Mudou status para: $novoStatus] " . $msgFinal;
     }
 

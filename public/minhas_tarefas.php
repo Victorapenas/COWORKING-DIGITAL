@@ -239,73 +239,84 @@ $listaEquipes = listarEquipes($empresaId);
     <?php require_once 'tarefa.php'; ?>
     
     <div id="modalExecucao" class="modal">
-        <div class="modal-content" style="width: 800px; max-width:95%;"> <span class="close-btn" onclick="closeModal('modalExecucao')">&times;</span>
+        <div class="modal-content" style="width: 900px; max-width:95%; height: 85vh; display:flex; flex-direction:column;">
             
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
+            <div style="flex-shrink:0; border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:15px; display:flex; justify-content:space-between;">
                 <div>
-                    <h3 id="execTitulo" style="margin:0; color:#2c3e50; font-size:1.4rem;">Detalhes da Atividade</h3>
-                    <div id="execCronograma" style="margin-top:10px;"></div> 
+                    <h3 id="execTitulo" style="margin:0; color:#2b3674;">Carregando...</h3>
+                    <div id="execCronograma" style="margin-top:5px; font-size:0.85rem;"></div>
                 </div>
-                <span id="execBadge" class="st-badge" style="font-size:0.9rem; padding:8px 15px;">STATUS</span>
+                <button onclick="closeModal('modalExecucao')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
             </div>
-            
-            <form id="formEntrega" enctype="multipart/form-data">
-                <input type="hidden" name="tarefa_id" id="execId">
-                
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px;">
-                    <div>
-                        <h4 style="color:#666; font-size:0.9rem; margin-bottom:10px;">Descrição da Atividade</h4>
-                        <div id="execDesc" style="background:#f8f9fa; padding:15px; border-radius:8px; font-size:0.9rem; color:#444; min-height:60px; margin-bottom:20px; border:1px solid #eee;"></div>
-                        
-                        <div id="execChecklistArea" style="margin-bottom: 20px; display:none;">
-                            <h4 style="color:#2b3674; font-size:0.9rem; margin-bottom:10px; display:flex; justify-content:space-between;">
-                                Checklist de Etapas
-                                <span id="execProgressoTexto" style="color:#0d6efd; font-weight:bold;">0%</span>
-                            </h4>
-                            <div id="listaChecklistColab" style="background:white; border:1px solid #eee; border-radius:10px; overflow:hidden;"></div>
-                        </div>
 
-                        <div class="form-group" id="groupProgressoManual">
-                            <label>Progresso Manual</label>
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <input type="range" name="progresso" id="execProgresso" min="0" max="100" oninput="document.getElementById('lblProg').innerText = this.value + '%'">
-                                <span id="lblProg" style="font-weight:bold; color:#0d6efd; width:40px;">0%</span>
+            <div class="modal-tabs" style="flex-shrink:0;">
+                <div class="modal-tab active" onclick="switchExecTab('execucao', this)">📝 Execução & Checklist</div>
+                <div class="modal-tab" onclick="switchExecTab('historico', this)">💬 Histórico & Arquivos</div>
+            </div>
+
+            <div style="flex-grow:1; overflow-y:auto; padding-right:5px;">
+                
+                <div id="tab-execucao" class="tab-exec-panel active">
+                    <form id="formEntrega" enctype="multipart/form-data">
+                        <input type="hidden" name="tarefa_id" id="execId">
+                        
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:25px;">
+                            <div>
+                                <div style="background:#f8f9fa; padding:15px; border-radius:10px; border:1px solid #eef0f7; margin-bottom:20px;">
+                                    <label style="font-size:0.8rem; color:#888;">DESCRIÇÃO</label>
+                                    <div id="execDesc" style="color:#333; margin-top:5px; line-height:1.5;"></div>
+                                </div>
+
+                                <div id="execChecklistArea">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                        <h4 style="margin:0; color:#2b3674;">Checklist de Entregas</h4>
+                                        <span id="execProgressoTexto" style="background:#e3f2fd; color:#0d6efd; padding:2px 8px; border-radius:10px; font-size:0.8rem; font-weight:bold;">0%</span>
+                                    </div>
+                                    <div id="listaChecklistColab"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="form-group">
+                                    <label>Entrega Geral (Opcional)</label>
+                                    <div class="upload-area" onclick="document.getElementById('fileInput').click()" style="border: 2px dashed #ddd; padding: 20px; text-align: center; border-radius: 10px; cursor: pointer; background: #fff;">
+                                        <input type="file" name="arquivo_entrega" id="fileInput" style="display:none" onchange="previewUpload(this)">
+                                        <div style="font-size:1.5rem; color:#aaa; margin-bottom:5px;"><?= getIcone('upload') ?></div>
+                                        <span id="uploadText" style="font-size:0.85rem; color:#666;">Clique para anexar arquivo final</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Comentário / Atualização</label>
+                                    <textarea name="comentario" rows="3" class="campo-padrao" placeholder="Descreva o que foi feito..."></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Novo Status</label>
+                                    <select name="status" id="execStatus" class="campo-padrao">
+                                        <option value="EM_ANDAMENTO">Em Andamento</option>
+                                        <option value="EM_REVISAO">Enviar para Revisão</option>
+                                        <option value="CONCLUIDA">Concluir Diretamente</option>
+                                    </select>
+                                </div>
+
+                                <div id="execFeedbackArea" style="display:none; background:#fff3e0; border-left:4px solid #ff9800; padding:10px; margin-bottom:15px; font-size:0.9rem;">
+                                    <strong>⚠️ Feedback:</strong> <span id="execFeedbackText"></span>
+                                </div>
+
+                                <button type="submit" class="botao-primario" style="width:100%; height:50px; font-size:1rem;">💾 Salvar Alterações</button>
                             </div>
                         </div>
+                    </form>
+                </div>
 
-                        <div class="form-group">
-                            <label>Alterar Status</label>
-                            <select name="status" id="execStatus" class="campo-padrao">
-                                <option value="PENDENTE">A Fazer</option>
-                                <option value="EM_ANDAMENTO">Em Execução</option>
-                                <option value="EM_REVISAO">Entregar (Revisão)</option>
-                                <option value="CONCLUIDA">Concluído</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label>Entrega / Arquivos</label>
-                        <div class="upload-area" onclick="document.getElementById('fileInput').click()" style="border: 2px dashed #e0e0e0; padding: 20px; text-align: center; border-radius: 10px; cursor: pointer; background: #fafafa; margin-bottom: 15px;">
-                            <input type="file" name="arquivo_entrega" id="fileInput" style="display:none" onchange="previewUpload(this)">
-                            <div style="font-size:1.5rem; color:#aaa; margin-bottom:5px;"><?= getIcone('pasta') ?></div>
-                            <span id="uploadText" style="font-size:0.85rem; color:#666;">Clique para anexar arquivo</span>
-                        </div>
-                        <div class="form-group">
-                            <label>Comentário</label>
-                            <textarea name="comentario" rows="3" class="campo-padrao" placeholder="Atualização sobre o andamento..."></textarea>
-                        </div>
-                        <div id="execFeedbackArea" style="display:none; padding: 15px; border-left: 5px solid #ff9800; background-color: #fff3e0; margin-bottom: 20px; border-radius: 4px;">
-                            <h4 style="color: #ff9800; margin-top: 0; display: flex; align-items: center;">
-                                <span style="font-size: 1.5em; margin-right: 10px;">⚠️</span>
-                                Feedback do Gestor
-                            </h4>
-                            <p id="execFeedbackText" style="margin: 0; white-space: pre-wrap; font-size: 1em;"></p>
-                        </div>
-                        <button type="submit" class="botao-primario" style="width:100%;">Salvar Progresso</button>
+                <div id="tab-historico" class="tab-exec-panel" style="display:none;">
+                    <div id="containerHistorico" style="display:flex; flex-direction:column; gap:15px;">
+                        <p style="text-align:center; color:#999;">Carregando histórico...</p>
                     </div>
                 </div>
-            </form>
+
+            </div>
         </div>
     </div>
 

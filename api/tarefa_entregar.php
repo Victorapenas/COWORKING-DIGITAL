@@ -12,20 +12,21 @@ try {
     $sessao = $_SESSION[SESSAO_USUARIO_KEY];
     $pdo = conectar_db();
 
-    // Recebe dados
+    // Recebe dados do formulário
     $tarefaId = (int)($_POST['tarefa_id'] ?? 0);
     $statusSolicitado = $_POST['status'] ?? '';
     $progresso = isset($_POST['progresso']) ? (int)$_POST['progresso'] : -1;
     $comentario = trim($_POST['comentario'] ?? '');
-    $feedback = trim($_POST['feedback_revisao'] ?? ''); // Novo campo para gestor/líder
+    $feedback = trim($_POST['feedback_revisao'] ?? ''); // Campo usado por gestores
     
-    // Checkboxes do checklist
+    // Checkboxes do checklist (apenas índices dos itens marcados no front)
     $checklistDone = $_POST['checklist_done'] ?? []; 
-    $checklistDone = array_map('intval', (array)$checklistDone); 
+    if (!is_array($checklistDone)) $checklistDone = [];
+    $checklistDone = array_map('intval', $checklistDone); 
     
     if (!$tarefaId) throw new Exception("Tarefa não identificada.");
 
-    // 1. Verifica permissões e dados atuais
+    // 1. Busca dados atuais da tarefa para validação e merge
     $stmt = $pdo->prepare("SELECT responsavel_id, projeto_id, status, checklist, feedback_revisao FROM tarefa WHERE id = ?");
     $stmt->execute([$tarefaId]);
     $tarefa = $stmt->fetch();
@@ -35,6 +36,7 @@ try {
     $isResp = ($tarefa['responsavel_id'] == $sessao['id']);
     $isGestor = in_array($sessao['papel'], ['DONO', 'LIDER', 'GESTOR']);
 
+    // Permissão: Só o responsável ou gestores podem alterar
     if (!$isResp && !$isGestor) {
         throw new Exception("Sem permissão para alterar esta tarefa.");
     }
@@ -42,56 +44,28 @@ try {
     // 2. Lógica de Status
     $novoStatus = $statusSolicitado;
 
-    // Colaborador sempre manda para revisão (não pode concluir direto)
+    // Se for Colaborador tentando concluir direto, força para EM_REVISAO
     if (!$isGestor && ($statusSolicitado === 'CONCLUIDA' || $statusSolicitado === 'EM_REVISAO')) {
         $novoStatus = 'EM_REVISAO'; 
-        $progresso = -1; // Força recálculo baseado no checklist
+        $progresso = -1; // Força recálculo automático do progresso
     }
 
+    // Apenas gestores podem definir status CONCLUIDA
     if ($statusSolicitado === 'CONCLUIDA' && !$isGestor) {
         throw new Exception("Apenas gestores podem aprovar a tarefa.");
     }
 
-    // 3. Lógica do Checklist e Cálculo de Progresso
-    $novoProgresso = $progresso;
-    $sqlUp = "UPDATE tarefa SET atualizado_em = NOW()";
-    $paramsUp = [];
-    $updateFields = [];
-
-    $checklist = json_decode($tarefa['checklist'] ?? '[]', true);
-    if (!empty($checklist)) {
-        $totalItens = count($checklist);
-        $concluidos = 0;
-        
-        foreach ($checklist as $index => &$item) {
-            // Apenas atualiza itens 'toggle' (simples) via este endpoint
-            if ($item['tipo_evidencia'] === 'toggle' || $item['tipo_evidencia'] === 'check') {
-                $item['concluido'] = in_array($index, $checklistDone) ? 1 : 0; 
-            }
-            if (!empty($item['concluido'])) {
-                $concluidos++;
-            }
-        }
-        unset($item); 
-
-        $novoJsonChecklist = json_encode($checklist, JSON_UNESCAPED_UNICODE);
-        $updateFields[] = "checklist = ?";
-        $paramsUp[] = $novoJsonChecklist;
-
-        if ($progresso === -1) { 
-            $novoProgresso = $totalItens > 0 ? round(($concluidos / $totalItens) * 100) : 0;
-        }
-    }
-    
-    // 4. Update de Arquivo (Geral da Tarefa)
+    // 3. Processa Upload de Arquivo GERAL (Entrega Final da Tarefa)
     $caminhoArquivo = null;
     $nomeOriginal = null;
+    
     if (isset($_FILES['arquivo_entrega']) && $_FILES['arquivo_entrega']['error'] === 0) {
         $uploadDir = __DIR__ . '/../public/uploads/entregas/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
         
         $ext = pathinfo($_FILES['arquivo_entrega']['name'], PATHINFO_EXTENSION);
         $nomeOriginal = $_FILES['arquivo_entrega']['name'];
+        // Nome único para evitar sobrescrita
         $novoNome = 'entrega_' . $tarefaId . '_' . uniqid() . '.' . $ext;
         
         if (move_uploaded_file($_FILES['arquivo_entrega']['tmp_name'], $uploadDir . $novoNome)) {
@@ -99,74 +73,108 @@ try {
         }
     }
 
-    // 5. Monta o restante do UPDATE
-    if ($novoStatus) {
-        $updateFields[] = "status = ?";
-        $paramsUp[] = $novoStatus;
+    // 4. Lógica Crítica do Checklist (Merge)
+    // Mescla o que veio do formulário com o que já existe no banco para não perder evidências
+    $checklistAtual = json_decode($tarefa['checklist'] ?? '[]', true);
+    $concluidosCount = 0;
+    $totalItens = count($checklistAtual);
+
+    if (!empty($checklistAtual)) {
+        foreach ($checklistAtual as $index => &$item) {
+            // Verifica o tipo do item
+            $tipo = $item['tipo_evidencia'] ?? 'check';
+
+            // Se for item simples (apenas marcar), atualiza baseado no checkbox enviado
+            if ($tipo === 'check' || $tipo === 'toggle') {
+                $item['concluido'] = in_array($index, $checklistDone) ? 1 : 0; 
+            }
+            
+            // Se for item de Arquivo ou Link, MANTÉM o estado atual do banco
+            // (pois o upload/link é feito via API separada ou mantido se já existia)
+            // A menos que queiramos forçar algo aqui, mas o ideal é preservar.
+            
+            // Contagem para progresso
+            if (!empty($item['concluido'])) {
+                $concluidosCount++;
+            }
+        }
+        unset($item); // Quebra referência
+
+        $novoJsonChecklist = json_encode($checklistAtual, JSON_UNESCAPED_UNICODE);
         
-        if ($novoStatus === 'CONCLUIDA') {
-            $updateFields[] = "concluida_em = NOW()";
-            $updateFields[] = "progresso = 100";
-            $updateFields[] = "feedback_revisao = NULL"; // Limpa feedback antigo se aprovou
+        // Recalcula progresso se não foi forçado manualmente
+        if ($progresso === -1) { 
+            $novoProgresso = ($totalItens > 0) ? round(($concluidosCount / $totalItens) * 100) : 0;
+        } else {
+            $novoProgresso = $progresso;
         }
-    }
-    
-    if ($novoProgresso >= 0 && $novoStatus !== 'CONCLUIDA') {
-        $updateFields[] = "progresso = ?";
-        $paramsUp[] = $novoProgresso;
+    } else {
+        // Se não tem checklist, usa o progresso manual enviado
+        $novoProgresso = ($progresso === -1) ? 0 : $progresso;
+        $novoJsonChecklist = $tarefa['checklist']; // Mantém o atual (vazio ou null)
     }
 
-    // [CORREÇÃO PRINCIPAL] Salva o feedback se for uma devolução ou revisão
-    // Isso cobre: Devolução para Colab (PENDENTE/ANDAMENTO) e Devolução para Gestor (REVISAO)
+    // Se concluiu, força 100%
+    if ($novoStatus === 'CONCLUIDA') $novoProgresso = 100;
+
+    // 5. Atualização no Banco de Dados
+    $sqlUp = "UPDATE tarefa SET 
+                status = ?, 
+                progresso = ?, 
+                checklist = ?, 
+                atualizado_em = NOW()";
+    
+    $paramsUp = [$novoStatus, $novoProgresso, $novoJsonChecklist];
+
+    // Se houve feedback de revisão (gestor devolvendo), salva
     if ($isGestor && !empty($feedback)) {
-        if ($novoStatus == 'PENDENTE' || $novoStatus == 'EM_ANDAMENTO' || $novoStatus == 'EM_REVISAO') {
-            $updateFields[] = "feedback_revisao = ?";
+        // Se devolveu (não concluiu), salva o feedback
+        if ($novoStatus !== 'CONCLUIDA') {
+            $sqlUp .= ", feedback_revisao = ?";
             $paramsUp[] = $feedback;
+        } else {
+            // Se aprovou, limpa o feedback antigo
+            $sqlUp .= ", feedback_revisao = NULL";
         }
-    } else if($isGestor && $novoStatus == 'CONCLUIDA') {
-        $updateFields[] = "feedback_revisao = NULL";
+    } else if ($novoStatus === 'CONCLUIDA') {
+        $sqlUp .= ", feedback_revisao = NULL, concluida_em = NOW()";
     }
 
-    // Junta os campos para o SQL
-    if (!empty($updateFields)) {
-        $sqlUp .= ", " . implode(", ", $updateFields);
-    }
-    
     $sqlUp .= " WHERE id = ?";
     $paramsUp[] = $tarefaId;
 
     $stmtUp = $pdo->prepare($sqlUp);
     $stmtUp->execute($paramsUp);
 
-    // 6. Histórico (Comentários)
+    // 6. Registro no Histórico (Comentários)
     $msgFinal = $comentario;
     
+    // Adiciona anexo ao texto do histórico se houver upload geral
     if ($caminhoArquivo) {
         $msgFinal .= "\n\n[ARQUIVO_ANEXO]:$caminhoArquivo:$nomeOriginal";
     }
     
-    // Mensagem de Transição de Status
+    // Log automático de mudança de status
     if ($novoStatus && $novoStatus !== $tarefa['status']) {
         if ($novoStatus == 'EM_REVISAO' && $tarefa['status'] == 'CONCLUIDA') $msgFinal = "⚠️ Líder solicitou refação. " . $msgFinal;
         elseif ($novoStatus == 'EM_REVISAO') $msgFinal = "🚀 Enviou para revisão. " . $msgFinal;
         elseif ($novoStatus == 'CONCLUIDA') $msgFinal = "✅ Aprovou e concluiu a tarefa. " . $msgFinal;
         elseif ($novoStatus == 'EM_ANDAMENTO' && $tarefa['status'] == 'EM_REVISAO') $msgFinal = "⚠️ Devolveu para ajustes. " . $msgFinal;
+        else $msgFinal = "[Mudou status para: $novoStatus] " . $msgFinal;
     }
 
-    // Se houver mensagem ou feedback, insere no histórico
-    if (!empty(trim($msgFinal)) || (!empty($feedback) && $feedback !== $tarefa['feedback_revisao'])) {
-        $comentario_historico = trim($msgFinal);
-        
-        // Se Gestor/Líder enviou feedback (e não é aprovação), adiciona ao histórico
-        if(!empty($feedback) && ($novoStatus != 'CONCLUIDA')) {
-            $comentario_historico .= "\n\n[MOTIVO/FEEDBACK]: " . $feedback;
-        }
+    // Se houver feedback do gestor (e não for aprovação), adiciona ao histórico
+    if (!empty($feedback) && ($novoStatus != 'CONCLUIDA') && $feedback !== $tarefa['feedback_revisao']) {
+        $msgFinal .= "\n\n[MOTIVO/FEEDBACK]: " . $feedback;
+    }
 
+    // Insere comentário apenas se tiver conteúdo
+    if (!empty(trim($msgFinal))) {
         $stmtCom = $pdo->prepare("INSERT INTO comentario_tarefa (tarefa_id, usuario_id, mensagem, criado_em) VALUES (?, ?, ?, NOW())");
-        $stmtCom->execute([$tarefaId, $sessao['id'], trim($comentario_historico)]);
+        $stmtCom->execute([$tarefaId, $sessao['id'], trim($msgFinal)]);
     }
 
-    echo json_encode(['ok' => true, 'mensagem' => 'Atualizado com sucesso.', 'novo_status' => $novoStatus]);
+    echo json_encode(['ok' => true, 'mensagem' => 'Tarefa atualizada com sucesso!', 'novo_status' => $novoStatus]);
 
 } catch (Exception $e) {
     http_response_code(400);
